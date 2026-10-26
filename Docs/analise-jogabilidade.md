@@ -25,6 +25,18 @@ Prioridade em três ondas: **1** = antes do teste fechado (impacto alto, esforç
 
 ## Onda 1: antes do teste fechado
 
+**Feita em 2026-10-25**, com testes. Diferenças do que estava proposto:
+
+- **Item 2:** o cliente usa a mesma folga do servidor (`ComboConfig.OnlineGraceSeconds`), mas ainda não reativa o combo
+  quando o servidor diz que ele continua.
+- **Item 9:** as rotas do Arcanista e da Ranger, que fecham só com o básico, caíram de +20% para +10%. A da Lâmina
+  continua +20%, e agora vale a pena com o item 8.
+- **Item 7:** quem ajudou com pelo menos 15% do dano ganha o XP inteiro e conta na missão; o Alz e o drop ficam com
+  quem matou.
+- **Item 12:** o destino de cada missão vem de `QuestGuide` (Shared). No minimapa, o NPC com missão ganha a cor e o
+  símbolo do marcador, e o lugar da caça aparece como um anel, preso à borda quando está longe. No mapa grande, aparece o
+  nome de quem dá missões.
+
 | # | Melhoria | Onde | Por quê | Esforço |
 |---|---|---|---|---|
 | 1 | Combo do cliente no relógio real (**conferido**) | `PlayerCombat.cs:219` usa `Time.time`; `HitStop.cs` põe `timeScale` em 0,02 | O hit stop congela o relógio do cliente por 35 a 180 ms a cada acerto, e o servidor julga em tempo real. A janela que o jogador vê fica deslocada do tamanho da própria janela (48 ms no fim do combo): acerta no verde e recebe Miss | P |
