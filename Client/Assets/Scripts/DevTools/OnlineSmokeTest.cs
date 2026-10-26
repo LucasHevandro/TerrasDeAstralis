@@ -396,6 +396,38 @@ namespace Game.Client.DevTools
             var items = 0;
             foreach (var stack in loot.Inventory) items += stack.Quantity;
 
+            // Ataque automático: com a opção ligada e um coelho selecionado, ele morre sem nenhum aperto de skill.
+            NetEntityView autoTarget = null;
+            foreach (var view in session.Views.Values)
+                if (view.TypeId == "coelho_saltador" && !view.IsDead && (autoTarget == null || Distance(view, motor) < Distance(autoTarget, motor)))
+                    autoTarget = view;
+            if (autoTarget != null)
+            {
+                var autoGiveUp = Time.realtimeSinceStartup + 30f;
+                while (Distance(autoTarget, motor) > 1.8f && Time.realtimeSinceStartup < autoGiveUp)
+                {
+                    var direction = autoTarget.transform.position - motor.transform.position;
+                    direction.y = 0;
+                    motor.Teleport(motor.transform.position + direction.normalized * Mathf.Min(direction.magnitude - 1.7f, 7f * Time.deltaTime));
+                    yield return null;
+                }
+                selector.Select(autoTarget.Target);
+                GameSettings.AutoAttack = true;
+                while (!autoTarget.IsDead && Time.realtimeSinceStartup < autoGiveUp)
+                {
+                    Follow(motor, autoTarget);
+                    if (selector.Current != autoTarget.Target) selector.Select(autoTarget.Target);
+                    yield return null;
+                }
+                GameSettings.AutoAttack = false;
+                Log(autoTarget.IsDead ? "Ataque automático: coelho morto sem apertar nenhuma skill" : "Ataque automático: o coelho não morreu");
+                if (!autoTarget.IsDead)
+                {
+                    outcome.Message = "o ataque automático não matou o coelho";
+                    yield break;
+                }
+            }
+
             var excellent = grades.FindAll(g => g == (byte)Shared.Combat.ComboGrade.Excellent).Count;
             // Personagem de conta novo ainda não tem o combo (libera na missão "A arte do combo"): aí não exige Excellent.
             var comboLocked = CharacterState.HasSheet && !CharacterState.Sheet.ComboUnlocked;

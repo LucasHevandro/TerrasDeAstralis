@@ -29,6 +29,12 @@ namespace Game.Client.UI
         /// <summary>Manda ao servidor os passos do tutorial, o FPS e erros (métricas do teste fechado; ClientMetrics).</summary>
         public static bool ClientMetrics { get; set; } = true;
 
+        /// <summary>
+        /// Ataque automático fora do combo: com alvo no alcance, usa as skills da barra que estiverem prontas, da esquerda
+        /// para a direita. Desligado por padrão; o combo continua sempre manual.
+        /// </summary>
+        public static bool AutoAttack { get; set; }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void LoadAndApply()
         {
@@ -50,6 +56,7 @@ namespace Game.Client.UI
                 MusicVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(Prefix + "musica", MusicVolume));
                 AmbientVolume = Mathf.Clamp01(PlayerPrefs.GetFloat(Prefix + "ambiente", AmbientVolume));
                 ClientMetrics = PlayerPrefs.GetInt(Prefix + "metricas", 1) == 1;
+                AutoAttack = PlayerPrefs.GetInt(Prefix + "autoataque", 0) == 1;
             }
             catch (Exception)
             {
@@ -90,6 +97,7 @@ namespace Game.Client.UI
                 PlayerPrefs.SetFloat(Prefix + "musica", MusicVolume);
                 PlayerPrefs.SetFloat(Prefix + "ambiente", AmbientVolume);
                 PlayerPrefs.SetInt(Prefix + "metricas", ClientMetrics ? 1 : 0);
+                PlayerPrefs.SetInt(Prefix + "autoataque", AutoAttack ? 1 : 0);
                 PlayerPrefs.Save();
             }
             catch (Exception)

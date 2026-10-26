@@ -258,6 +258,28 @@ namespace Game.Client.Combat
             for (var key = 0; key < Game.Shared.Progression.SkillTraining.HotbarRow; key++)
                 if (KeyBindings.Pressed(GameAction.Skill1 + key)) RequestHotbar(alt ? key + Game.Shared.Progression.SkillTraining.HotbarRow : key);
             if (KeyBindings.Pressed(GameAction.Awakening) && Online) NetworkSession.Instance.Send(new Msg.ActivateAwakening());
+            if (GameSettings.AutoAttack) TryAutoAttack(now);
+        }
+
+        /// <summary>
+        /// Ataque automático (opção): fora do combo, com alvo vivo e nada sendo conjurado, usa a primeira skill da barra (da
+        /// esquerda para a direita) liberada, fora da recarga, com MP e com o alvo no alcance. O combo fica sempre manual:
+        /// acertar o tempo da barra é a habilidade do jogo.
+        /// </summary>
+        private void TryAutoAttack(double now)
+        {
+            if (Combo.State == ComboState.Active || Time.time < _castUntil || _queuedSkill >= 0) return;
+            var target = Target;
+            if (target == null || !target.IsAlive) return;
+            var distance = DistanceToEdge(target);
+            for (var slot = 0; slot < Game.Shared.Progression.SkillTraining.HotbarSize; slot++)
+            {
+                var index = CharacterState.HotbarSkill(slot);
+                if (index < 0 || index >= skills.Count || (Online && !CharacterState.SkillUnlocked(index))) continue;
+                if (SkillRules.Check(skills[index], index, _cooldowns, Mp, distance, Time.time) != SkillUseCheck.Ok) continue;
+                UseSkill(index, now);
+                return;
+            }
         }
 
         // Ações públicas: usadas pelo teclado hoje e, depois, pela rede, IA e testes automáticos.

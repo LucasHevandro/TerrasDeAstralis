@@ -320,6 +320,12 @@ namespace Game.Client.UI
                 GameSettings.ClientMetrics = metrics;
                 GameSettings.Save();
             }
+            var autoAttack = UiTheme.Toggle(new Rect(x, y + 34, width, 28), GameSettings.AutoAttack, " " + Loc.T("options.auto_attack"), _label);
+            if (autoAttack != GameSettings.AutoAttack)
+            {
+                GameSettings.AutoAttack = autoAttack;
+                GameSettings.Save();
+            }
 
             if (GUI.Button(new Rect(x, _rect.yMax - 60, 220, 40), Loc.T("options.defaults"), _button))
             {
