@@ -59,6 +59,14 @@ namespace Game.Shared.Economy
             new ShopEntry("luvas_ferro", 450),
             new ShopEntry("botas_ferro", 450),
             new ShopEntry("anel_ferro", 600),
+            // Aço Negro (Nv10): antes só caía de monstro, e a arma tinha ~57% de chance de ter caído até o Nv12.
+            new ShopEntry("espada_aco_negro", 3500),
+            new ShopEntry("cajado_aco_negro", 3500),
+            new ShopEntry("arco_aco_negro", 3500),
+            new ShopEntry("armadura_aco_negro", 3000),
+            new ShopEntry("luvas_aco_negro", 1500),
+            new ShopEntry("botas_aco_negro", 1500),
+            new ShopEntry("anel_aco_negro", 2000),
         };
 
         public static ShopEntry? Find(string itemId) => Stock.FirstOrDefault(e => e.ItemId == itemId);

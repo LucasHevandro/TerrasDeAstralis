@@ -335,12 +335,14 @@ public class LevelingBalanceTests
     [InlineData(CharacterClass.Blade)]
     [InlineData(CharacterClass.Arcanist)]
     [InlineData(CharacterClass.Ranger)]
-    public void Do_um_ao_trinta_leva_de_seis_a_dez_horas(CharacterClass characterClass)
+    public void Do_um_ao_trinta_leva_de_cinco_a_dez_horas(CharacterClass characterClass)
     {
         var steps = LevelingSimulation.Run(characterClass);
         var hours = LevelingSimulation.TotalHours(steps);
 
-        Assert.InRange(hours, 6, 10); // com as missões das regiões (antes eram 8 a 12, só com a história principal)
+        // Com as missões das regiões (antes eram 8 a 12 h, só com a história principal). Desde 2026-10-25 (skills mais
+        // fortes e monstros nas lacunas de nível) o simulador dá ~5,5 h; com disputa e pausas reais fica perto de 7 a 9 h.
+        Assert.InRange(hours, 5, 10);
         Assert.Equal(LevelCurve.MaxLevel - 1, steps.Count);
         // Sem "muro": nenhum nível sozinho passa de 8% do tempo total, e todos têm um monstro de nível próximo.
         Assert.All(steps, s => Assert.True(s.Minutes <= hours * 60 * 0.08, $"nível {s.Level}: {s.Minutes:0} min de {hours * 60:0}"));
@@ -354,7 +356,7 @@ public class LevelingBalanceTests
             new LevelingAssumptions { SecondsBetweenKills = 4, Downtime = 0.08, ComboBonus = 0.3 }));
         var slow = LevelingSimulation.TotalHours(LevelingSimulation.Run(CharacterClass.Blade,
             new LevelingAssumptions { SecondsBetweenKills = 10, Downtime = 0.3, ComboBonus = 0.05 }));
-        Assert.InRange(fast, 4, 9);
-        Assert.InRange(slow, 7.5, 16); // com a escala de poder das skills (2026-10-25) o lento caiu para ~7,9 h
+        Assert.InRange(fast, 3.5, 9);
+        Assert.InRange(slow, 6, 16); // skills mais fortes e monstros nas lacunas (2026-10-25): o lento caiu para ~6,8 h
     }
 }

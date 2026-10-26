@@ -69,6 +69,21 @@ public class WorldContentTests
     }
 
     [Fact]
+    public void Fogueiras_de_retorno_ficam_longe_dos_monstros_agressivos()
+    {
+        foreach (var spawn in WorldContent.Spawns().Where(s => s.Data.Aggressive && !s.IsBoss))
+        foreach (var point in WorldContent.RespawnPoints)
+        {
+            var centerDistance = MathF.Sqrt((spawn.CenterX - point.X) * (spawn.CenterX - point.X) + (spawn.CenterZ - point.Z) * (spawn.CenterZ - point.Z));
+            var closest = centerDistance - spawn.Radius - spawn.Data.WanderRadius;
+            Assert.True(closest >= spawn.Data.AggroRadius + 2, $"{spawn.Data.Id} pode chegar a {closest:0.0} m da fogueira {point.Id}");
+        }
+        Assert.Equal("vila", WorldContent.RespawnPoints[0].Id);
+        Assert.Equal("acampamento_ruinas", WorldContent.NearestRespawn(-40, 125).Id);
+        Assert.Equal("vila", WorldContent.NearestRespawn(5, 10).Id);
+    }
+
+    [Fact]
     public void Mundo_aberto_tem_monstros_para_um_teste_com_vinte_jogadores()
     {
         var common = WorldContent.Spawns().Where(s => !s.IsBoss).ToList();

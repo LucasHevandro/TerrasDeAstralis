@@ -56,6 +56,23 @@ namespace Game.Shared.World
         }
     }
 
+    /// <summary>Fogueira de retorno no mundo aberto (nome na chave <c>respawn_point.&lt;id&gt;</c>).</summary>
+    public sealed class RespawnPoint
+    {
+        public string Id { get; }
+        public float X { get; }
+        public float Z { get; }
+
+        public string Name => Loc.T(Loc.Key("respawn_point.", Id));
+
+        public RespawnPoint(string id, float x, float z)
+        {
+            Id = id;
+            X = x;
+            Z = z;
+        }
+    }
+
     /// <summary>
     /// Conteúdo do mapa da Fase 2: zonas, monstros e drops. Fonte única para o servidor e para o construtor
     /// da cena do cliente. Números provisórios até a planilha de design.
@@ -66,13 +83,42 @@ namespace Game.Shared.World
         public const float PlayerSpawnX = 0f;
         public const float PlayerSpawnZ = 0f;
 
+        /// <summary>
+        /// Fogueiras onde se renasce no mundo aberto: a mais perto de onde o jogador morreu. Antes era sempre a vila, e
+        /// morrer nas Ruínas ou no chefe custava meio minuto de corrida de volta. A primeira é a vila.
+        /// </summary>
+        public static readonly IReadOnlyList<RespawnPoint> RespawnPoints = new List<RespawnPoint>
+        {
+            new RespawnPoint("vila", PlayerSpawnX, PlayerSpawnZ),
+            new RespawnPoint("acampamento_mata", 28, 62),
+            new RespawnPoint("acampamento_ruinas", -22, 100),
+            new RespawnPoint("entrada_arena", 10, 144),
+        };
+
+        /// <summary>Fogueira mais perto do ponto (x, z).</summary>
+        public static RespawnPoint NearestRespawn(float x, float z)
+        {
+            var best = RespawnPoints[0];
+            var bestDistance = float.MaxValue;
+            foreach (var point in RespawnPoints)
+            {
+                var distance = (point.X - x) * (point.X - x) + (point.Z - z) * (point.Z - z);
+                if (distance < bestDistance)
+                {
+                    best = point;
+                    bestDistance = distance;
+                }
+            }
+            return best;
+        }
+
         public static List<ZoneDefinition> Zones() => new List<ZoneDefinition>
         {
             new ZoneDefinition { Id = "vila", MinLevel = 1, MaxLevel = 30, CenterX = 0, CenterZ = 0, Radius = 16 },
             new ZoneDefinition { Id = "campos_do_vento", MinLevel = 1, MaxLevel = 10, CenterX = 0, CenterZ = 40, Radius = 24 },
             new ZoneDefinition { Id = "mata_sombria", MinLevel = 10, MaxLevel = 20, CenterX = 45, CenterZ = 85, Radius = 26 },
             new ZoneDefinition { Id = "ruinas_esquecidas", MinLevel = 20, MaxLevel = 30, CenterX = -45, CenterZ = 125, Radius = 26 },
-            new ZoneDefinition { Id = "arena_do_guardiao", MinLevel = 30, MaxLevel = 30, CenterX = 0, CenterZ = 170, Radius = 18 },
+            new ZoneDefinition { Id = "arena_do_guardiao", MinLevel = 28, MaxLevel = 30, CenterX = 0, CenterZ = 170, Radius = 18 },
         };
 
         public static List<SpawnDefinition> Spawns() => new List<SpawnDefinition>
@@ -80,7 +126,7 @@ namespace Game.Shared.World
             // Campos do Vento (Nv 1–10)
             Spawn(-10, 36, 10, 10, new MonsterData
             {
-                Id = "coelho_saltador", Level = 2, MaxHp = 700, AttackDamage = 25,
+                Id = "coelho_saltador", Level = 2, MaxHp = 700, AttackDamage = 50,
                 AttackPower = 5, Defense = 20, AttackRange = 1.2f, MoveSpeed = 3.5f, BodyRadius = 0.35f, Aggressive = false,
                 Behavior = MonsterBehavior.Skittish,
                 XpReward = 30, RespawnSeconds = 6,
@@ -91,9 +137,9 @@ namespace Game.Shared.World
             }),
             Spawn(10, 46, 8, 9, new MonsterData
             {
-                Id = "lobo_cinzento", Level = 6, MaxHp = 1800, AttackDamage = 60,
+                Id = "lobo_cinzento", Level = 6, MaxHp = 1800, AttackDamage = 150,
                 AttackPower = 15, Defense = 40, AttackRange = 1.5f, MoveSpeed = 4.5f, AggroRadius = 8, Behavior = MonsterBehavior.Pack,
-                XpReward = 70, RespawnSeconds = 8,
+                XpReward = 100, RespawnSeconds = 8,
                 Drops = new DropTable(10, 25,
                     new DropEntry("pele_lobo", ItemRarity.Common, 0.5, 1, 2),
                     new DropEntry("presa_lobo", ItemRarity.Uncommon, 0.15),
@@ -102,10 +148,23 @@ namespace Game.Shared.World
                     Equip("cajado_ferro", 0.02), Equip("arco_ferro", 0.02), Equip("pedra_vigor", 0.01)),
             }),
 
+            // Lobos-alfa no norte dos Campos: a ponte do Nv9-10 até os javalis.
+            Spawn(-16, 57, 6, 8, new MonsterData
+            {
+                Id = "lobo_alfa", Level = 9, MaxHp = 3000, AttackDamage = 220,
+                AttackPower = 25, Defense = 60, AttackRange = 1.6f, MoveSpeed = 4.8f, AggroRadius = 8, Behavior = MonsterBehavior.Pack,
+                XpReward = 140, RespawnSeconds = 9,
+                Drops = new DropTable(15, 35,
+                    new DropEntry("pele_lobo", ItemRarity.Common, 0.6, 1, 2),
+                    new DropEntry("presa_lobo", ItemRarity.Uncommon, 0.25),
+                    new DropEntry("nucleo_baixo", ItemRarity.Rare, 0.04),
+                    Equip("luvas_ferro", 0.03), Equip("botas_aco_negro", 0.01)),
+            }),
+
             // Mata Sombria (Nv 10–20)
             Spawn(38, 90, 8, 9, new MonsterData
             {
-                Id = "javali_furioso", Level = 12, MaxHp = 4400, AttackDamage = 120,
+                Id = "javali_furioso", Level = 12, MaxHp = 4400, AttackDamage = 300,
                 AttackPower = 40, Defense = 90, AttackRange = 1.6f, AttackWindupSeconds = 0.7f, MoveSpeed = 5f, Behavior = MonsterBehavior.Charger,
                 AggroRadius = 9, XpReward = 200, RespawnSeconds = 10,
                 Drops = new DropTable(30, 70,
@@ -115,7 +174,7 @@ namespace Game.Shared.World
             }),
             Spawn(55, 97, 8, 9, new MonsterData
             {
-                Id = "aranha_da_mata", Level = 16, MaxHp = 5200, AttackDamage = 150,
+                Id = "aranha_da_mata", Level = 16, MaxHp = 5200, AttackDamage = 375,
                 AttackPower = 55, Defense = 80, AttackRange = 2f, AttackWindupSeconds = 0.5f, MoveSpeed = 4f, BodyRadius = 0.8f,
                 Behavior = MonsterBehavior.HitAndRun,
                 AggroRadius = 10, XpReward = 300, RespawnSeconds = 10,
@@ -127,10 +186,24 @@ namespace Game.Shared.World
                     Equip("cajado_aco_negro", 0.015), Equip("arco_aco_negro", 0.015)),
             }),
 
+            // Aranhas-rainhas na borda da Mata, no caminho das Ruínas: a ponte do Nv19-20 até os golens.
+            Spawn(28, 104, 6, 8, new MonsterData
+            {
+                Id = "aranha_rainha", Level = 19, MaxHp = 7500, AttackDamage = 450,
+                AttackPower = 65, Defense = 110, AttackRange = 2.2f, AttackWindupSeconds = 0.55f, MoveSpeed = 4.2f, BodyRadius = 1f,
+                Behavior = MonsterBehavior.HitAndRun,
+                AggroRadius = 10, XpReward = 480, RespawnSeconds = 11,
+                Drops = new DropTable(60, 120,
+                    new DropEntry("seda", ItemRarity.Common, 0.5, 1, 2),
+                    new DropEntry("veneno", ItemRarity.Uncommon, 0.3),
+                    new DropEntry("nucleo_medio", ItemRarity.Rare, 0.05),
+                    Equip("anel_aco_negro", 0.02), Equip("armadura_astralita", 0.005)),
+            }),
+
             // Ruínas Esquecidas (Nv 20–30)
             Spawn(-40, 128, 6, 8, new MonsterData
             {
-                Id = "golem_de_pedra", Level = 22, MaxHp = 12000, AttackDamage = 240,
+                Id = "golem_de_pedra", Level = 22, MaxHp = 12000, AttackDamage = 600,
                 AttackPower = 80, Defense = 260, AttackRange = 2.2f, AttackCooldownSeconds = 3f,
                 AttackWindupSeconds = 1.0f, MoveSpeed = 2.2f, BodyRadius = 0.8f, AggroRadius = 7, XpReward = 700, RespawnSeconds = 15,
                 Behavior = MonsterBehavior.AreaSlam,
@@ -141,7 +214,7 @@ namespace Game.Shared.World
             }),
             Spawn(-58, 122, 8, 8, new MonsterData
             {
-                Id = "espectro", Level = 26, MaxHp = 9000, AttackDamage = 280,
+                Id = "espectro", Level = 26, MaxHp = 9000, AttackDamage = 700,
                 AttackPower = 100, Defense = 120, AttackRange = 2.5f, AttackCooldownSeconds = 1.6f,
                 AttackWindupSeconds = 0.45f, MoveSpeed = 5.5f, AggroRadius = 11, XpReward = 900, RespawnSeconds = 12,
                 Behavior = MonsterBehavior.Blink,
@@ -154,7 +227,7 @@ namespace Game.Shared.World
 
             Spawn(-30, 140, 6, 7, new MonsterData
             {
-                Id = "cavaleiro_caido", Level = 29, MaxHp = 14000, AttackDamage = 330,
+                Id = "cavaleiro_caido", Level = 29, MaxHp = 14000, AttackDamage = 825,
                 AttackPower = 120, Defense = 230, AttackRange = 2.4f, AttackCooldownSeconds = 2.2f,
                 AttackWindupSeconds = 0.7f, MoveSpeed = 4f, BodyRadius = 0.7f, AggroRadius = 9, XpReward = 1400, RespawnSeconds = 15,
                 Behavior = MonsterBehavior.Berserk,
@@ -165,14 +238,27 @@ namespace Game.Shared.World
                     Equip("pedra_precisao", 0.015)),
             }),
 
+            // Cavaleiros errantes na entrada da arena (Nv 28): mais caça para o fim da subida.
+            Spawn(-10, 157, 6, 7, new MonsterData
+            {
+                Id = "cavaleiro_errante", Level = 28, MaxHp = 13000, AttackDamage = 780,
+                AttackPower = 115, Defense = 220, AttackRange = 2.4f, AttackCooldownSeconds = 2.2f,
+                AttackWindupSeconds = 0.7f, MoveSpeed = 4f, BodyRadius = 0.7f, AggroRadius = 9, XpReward = 1250, RespawnSeconds = 14,
+                Behavior = MonsterBehavior.Berserk,
+                Drops = new DropTable(140, 280,
+                    new DropEntry("essencia", ItemRarity.Uncommon, 0.3),
+                    new DropEntry("nucleo_alto", ItemRarity.Rare, 0.06),
+                    Equip("luvas_astralita", 0.02), Equip("botas_astralita", 0.02)),
+            }),
+
             // Chefe de campo
             new SpawnDefinition
             {
                 CenterX = 0, CenterZ = 170, Count = 1, Radius = 0, IsBoss = true, Scheduled = true,
                 Data = new MonsterData
                 {
-                    Id = "guardiao_das_ruinas", Level = 30, MaxHp = 60000,
-                    AttackDamage = 380, AttackPower = 140, Defense = 280, AttackRange = 3.2f,
+                    Id = "guardiao_das_ruinas", Level = 30, MaxHp = 180000,
+                    AttackDamage = 570, AttackPower = 140, Defense = 280, AttackRange = 3.2f,
                     AttackCooldownSeconds = 2.4f, AttackWindupSeconds = 0.9f, MoveSpeed = 3.5f, BodyRadius = 1.1f, AggroRadius = 14,
                     LeashRadius = 30, WanderRadius = 0, XpReward = 15000, RespawnSeconds = 120,
                     Drops = new DropTable(2000, 4000,

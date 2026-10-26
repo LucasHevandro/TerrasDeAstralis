@@ -222,13 +222,13 @@ namespace Game.Shared.Progression
                     new QuestObjective(QuestObjectiveKind.Kill, "espectro", 25),
                     new QuestObjective(QuestObjectiveKind.Collect, "essencia", 10),
                 },
-                RewardXp = 40000, RewardAlz = 80000, RewardItems = { (ItemCatalog.CoreHigh, 3), ("pedra_precisao", 1) },
+                RewardXp = 40000, RewardAlz = 40000, RewardItems = { (ItemCatalog.CoreHigh, 3), ("pedra_precisao", 1) },
             },
             new QuestDefinition
             {
                 Id = "o_guardiao", MinLevel = 30, PreviousQuestId = "ecos_espectrais",
                 Objectives = { new QuestObjective(QuestObjectiveKind.Kill, "guardiao_das_ruinas") },
-                RewardXp = 0, RewardAlz = 200000, RewardItems = { (ItemCatalog.CoreHigh, 5) },
+                RewardXp = 0, RewardAlz = 60000, RewardItems = { (ItemCatalog.CoreHigh, 5) },
             },
 
             // ----- Santuário das Ruínas -----
@@ -250,7 +250,7 @@ namespace Game.Shared.Progression
             {
                 Id = "diaria_lobos", GiverNpcId = NpcCatalog.Hunter, MinLevel = 6, Daily = true,
                 Objectives = { new QuestObjective(QuestObjectiveKind.Kill, "lobo_cinzento", 10) },
-                RewardXp = 3000, RewardAlz = 1000, RewardItems = { ("nucleo_baixo", 1) },
+                RewardXp = 1500, RewardAlz = 1000, RewardItems = { ("nucleo_baixo", 1) },
             },
             new QuestDefinition
             {
@@ -318,7 +318,7 @@ namespace Game.Shared.Progression
             },
             new QuestDefinition
             {
-                Id = "javalis_famintos", GiverNpcId = NpcCatalog.Scout, MinLevel = 11,
+                Id = "javalis_famintos", GiverNpcId = NpcCatalog.Scout, MinLevel = 10,
                 Objectives = { new QuestObjective(QuestObjectiveKind.Kill, "javali_furioso", 12) },
                 RewardXp = 11000, RewardAlz = 1300, RewardItems = { ("pocao_hp_m", 3) },
             },
@@ -363,6 +363,17 @@ namespace Game.Shared.Progression
                 Id = "golens_despertos", GiverNpcId = NpcCatalog.Scholar, MinLevel = 21,
                 Objectives = { new QuestObjective(QuestObjectiveKind.Kill, "golem_de_pedra", 10) },
                 RewardXp = 30500, RewardAlz = 3700, RewardItems = { ("pocao_hp_m", 4) },
+            },
+            new QuestDefinition
+            {
+                // O Nv22 era o único sem missão nova.
+                Id = "pedras_sussurrantes", GiverNpcId = NpcCatalog.Scholar, MinLevel = 22, PreviousQuestId = "golens_despertos",
+                Objectives =
+                {
+                    new QuestObjective(QuestObjectiveKind.Kill, "golem_de_pedra", 6),
+                    new QuestObjective(QuestObjectiveKind.Collect, "fragmento_pedra", 6),
+                },
+                RewardXp = 33000, RewardAlz = 4000, RewardItems = { ("pocao_hp_m", 3) },
             },
             new QuestDefinition
             {
