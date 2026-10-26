@@ -22,6 +22,13 @@ namespace Game.Shared.Combat
         /// <summary>Dano base antes de ataque, combo, defesa e crítico.</summary>
         public int BaseDamage = 100;
 
+        /// <summary>
+        /// Quanto do poder do personagem (ataque ou magia) entra no golpe: 1 no ataque básico, mais nas skills que custam
+        /// MP e têm recarga longa. Sem isso o poder (centenas de pontos) apagava a diferença de dano base entre as skills, e
+        /// nenhuma rendia mais que apertar o básico.
+        /// </summary>
+        public float PowerScale = 1f;
+
         /// <summary>Alcance em metros, medido até a borda do alvo.</summary>
         public float Range = 3f;
 
@@ -48,7 +55,7 @@ namespace Game.Shared.Combat
 
         /// <summary>Cria uma skill.</summary>
         public SkillData(string id, SkillKind kind, int baseDamage, float range, float cooldownSeconds,
-            float areaRadius = 0f, int mpCost = 0, float lockSeconds = 0.15f, float castSeconds = 0.5f)
+            float areaRadius = 0f, int mpCost = 0, float lockSeconds = 0.15f, float castSeconds = 0.5f, float powerScale = 1f)
         {
             Id = id;
             Kind = kind;
@@ -59,6 +66,7 @@ namespace Game.Shared.Combat
             MpCost = mpCost;
             LockSeconds = lockSeconds;
             CastSeconds = castSeconds;
+            PowerScale = powerScale;
         }
 
         /// <summary>Lança <see cref="ArgumentException"/> se algum valor for inválido.</summary>
@@ -71,6 +79,7 @@ namespace Game.Shared.Combat
             if (AreaRadius < 0) throw new ArgumentException($"{Id}: raio não pode ser negativo.", nameof(AreaRadius));
             if (MpCost < 0) throw new ArgumentException($"{Id}: custo de MP não pode ser negativo.", nameof(MpCost));
             if (LockSeconds < 0) throw new ArgumentException($"{Id}: tempo parado não pode ser negativo.", nameof(LockSeconds));
+            if (PowerScale <= 0) throw new ArgumentException($"{Id}: escala de poder deve ser maior que zero.", nameof(PowerScale));
             if (CastSeconds < 0) throw new ArgumentException($"{Id}: conjuração não pode ser negativa.", nameof(CastSeconds));
         }
     }

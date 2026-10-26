@@ -129,6 +129,28 @@ public class ClassTests
         Assert.Equal(NpcCatalog.DungeonPortal, crypt.NpcId);
     }
 
+    [Theory]
+    [InlineData(CharacterClass.Blade)]
+    [InlineData(CharacterClass.Arcanist)]
+    [InlineData(CharacterClass.Ranger)]
+    public void EscalaDePoderCresceComONivelDaSkill(CharacterClass characterClass)
+    {
+        var skills = ClassCatalog.SkillsFor(characterClass);
+        Assert.Equal(1f, skills[0].Skill.PowerScale); // o ataque básico é a referência
+        // Entre as que custam MP (de alvo único e de área, separadas), a liberada depois nunca escala menos que a anterior.
+        // As sem custo (Giro, Chute, Golpe de Cajado) são golpes de apoio e ficam fora.
+        foreach (var area in new[] { false, true })
+        {
+            var ladder = skills.Skip(1).Where(s => s.Skill.MpCost > 0 && s.Skill.AreaRadius > 0 == area && s.Skill.Kind == skills[0].Skill.Kind).ToList();
+            for (var i = 1; i < ladder.Count; i++)
+                Assert.True(ladder[i].Skill.PowerScale >= ladder[i - 1].Skill.PowerScale,
+                    $"{ladder[i].Skill.Id} ({ladder[i].Skill.PowerScale}) escala menos que {ladder[i - 1].Skill.Id} ({ladder[i - 1].Skill.PowerScale})");
+        }
+        var stats = new StatBlock { AttackPower = 500, MagicPower = 500 };
+        var finale = skills[skills.Count - 1].Skill;
+        Assert.Equal((int)Math.Round(500 * finale.PowerScale), ClassCatalog.SkillPower(finale, stats));
+    }
+
     [Fact]
     public void GolpeMagicoDaLaminaUsaOAtaqueQuandoEleEhMaior()
     {
@@ -333,6 +355,6 @@ public class LevelingBalanceTests
         var slow = LevelingSimulation.TotalHours(LevelingSimulation.Run(CharacterClass.Blade,
             new LevelingAssumptions { SecondsBetweenKills = 10, Downtime = 0.3, ComboBonus = 0.05 }));
         Assert.InRange(fast, 4, 9);
-        Assert.InRange(slow, 8, 16);
+        Assert.InRange(slow, 7.5, 16); // com a escala de poder das skills (2026-10-25) o lento caiu para ~7,9 h
     }
 }

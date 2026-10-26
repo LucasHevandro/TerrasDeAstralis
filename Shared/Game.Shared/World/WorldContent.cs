@@ -278,7 +278,7 @@ namespace Game.Shared.World
         public const int MaxSp = 2000;
         public const int StartingSp = 1000;
         public const int SpPerHit = 60;
-        public const float MpRegenPerSecond = 20f;
+        public const float MpRegenPerSecond = 10f;
         public const float RespawnSeconds = 4f;
         public const int FinisherBaseDamage = 400;
         public const float FinisherRange = 3f;

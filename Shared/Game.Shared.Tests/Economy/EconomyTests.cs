@@ -35,7 +35,8 @@ public class EconomyTests
         // Ninguém fica no vermelho jogando normalmente, mas a maior parte do Alz volta para o jogo (melhoria, poções, loja).
         Assert.All(bands, b => Assert.True(b.Balance >= 0, $"{b.Name}: saldo {b.Balance}"));
         var spentShare = bands.Sum(b => b.Spent) / (double)bands.Sum(b => b.Income);
-        Assert.InRange(spentShare, 0.6, 0.9);
+        // Com a escala de poder das skills (2026-10-25) a caça ficou mais rápida e entra um pouco mais de Alz (~0,6 gasto).
+        Assert.InRange(spentShare, 0.55, 0.9);
     }
 
     [Fact]

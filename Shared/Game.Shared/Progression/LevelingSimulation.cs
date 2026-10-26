@@ -178,7 +178,7 @@ namespace Game.Shared.Progression
                     for (var i = 0; i < skills.Count; i++)
                     {
                         if (readyAt[i] > t || skills[i].MpCost > mp) continue;
-                        var hit = skills[i].BaseDamage + ClassCatalog.PowerFor(skills[i].Kind, stats);
+                        var hit = skills[i].BaseDamage + ClassCatalog.SkillPower(skills[i], stats);
                         if (hit > bestHit)
                         {
                             bestHit = hit;
