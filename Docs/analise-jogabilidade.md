@@ -54,6 +54,9 @@ Prioridade em três ondas: **1** = antes do teste fechado (impacto alto, esforç
 
 ## Decisão sua: como as skills ganham espaço
 
+**Escolhida a B (2026-10-25)**, feita com a regeneração de MP em 10 por segundo. Escalas e tabela em
+`Docs/balanceamento.md`, seção "Escala de poder das skills".
+
 Esta é a maior mudança de equilíbrio e muda a sensação do combate, então vale escolher antes de mexer:
 
 - **A) Básico mais lento (só números):** recarga e conjuração de Corte, Faísca e Tiro Certeiro (e Chute e Golpe de

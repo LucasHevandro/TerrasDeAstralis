@@ -265,3 +265,58 @@ renascimento: um elite morto pode voltar comum, e vice-versa.
 - O `EntitySpawned` leva o campo `Elite` (protocolo 18). Quando o elite muda no renascimento, o servidor faz quem via o
   monstro esquecê-lo e manda o `EntitySpawned` de novo.
 - Teste do visual: `Game.Server --elites` faz todo monstro comum do mundo aberto nascer elite.
+
+## Escala de poder das skills (2026-10-25)
+
+O dano do golpe era `base + poder`, e o poder do personagem (113 no Nv1, 666 no Nv30) pesava muito mais que a base das
+skills (90 a 700). Com o ataque básico a 0,5 s de recarga, nenhuma skill de alvo único rendia mais que apertar o básico.
+
+- **Fórmula:** `base + poder × escala`, com a escala em `SkillData.PowerScale` (`ClassCatalog.SkillPower`). O básico tem
+  escala 1.
+- **Meta:** skill de alvo único rende pelo menos 1,3 vez o básico por segundo de conjuração; skill de área, cerca de 1,0
+  por alvo (ganha a partir de dois alvos). As sem custo de MP (Giro, Chute, Golpe de Cajado) são golpes de apoio.
+- **MP:** regeneração de 20 para 10 por segundo, para o MP voltar a ser o freio das skills fortes.
+- **Subida:** Lâmina 6,0 h, Arcanista 6,3 h e Ranger 6,2 h no simulador (antes ~6,8 h). As faixas de teste do jogador
+  lento (7,5 a 16 h) e do Alz gasto (55% a 90%) foram alargadas um pouco por causa da caça mais rápida.
+
+"Rende × básico" compara o golpe por segundo de conjuração no Nv30 com o básico (que é limitado pela recarga de 0,5 s).
+"Ganho líquido" é o golpe menos o que o básico faria no mesmo tempo, no nível em que a skill é liberada. Equipamento
+completo do grau do nível, com melhoria +2, +4 e +5, defesa 0 e sem crítico.
+### Lâmina
+
+| Skill | Nv | Escala | Golpe no Nv | Golpe Nv30 | Rende × básico (Nv30) | Ganho líquido no Nv |
+|---|---:|---:|---:|---:|---:|---:|
+| corte | 1 | 1,0 | 233 | 786 | 1,11 | +23 |
+| giro_de_lamina | 3 | 1,2 | 259 | 889 | 1,03 | -28 |
+| golpe_runico | 5 | 1,7 | 427 | 1272 | 1,35 | +80 |
+| estocada_dupla | 8 | 2,0 | 622 | 1532 | 1,30 | +126 |
+| fenda_sismica | 12 | 1,6 | 782 | 1326 | 0,99 | +24 |
+| lamina_flamejante | 15 | 1,6 | 889 | 1366 | 1,58 | +352 |
+| tempestade_de_aco | 20 | 2,4 | 1642 | 1978 | 1,01 | +27 |
+| execucao | 25 | 2,8 | 2269 | 2465 | 1,65 | +909 |
+
+### Arcanista
+
+| Skill | Nv | Escala | Golpe no Nv | Golpe Nv30 | Rende × básico (Nv30) | Ganho líquido no Nv |
+|---|---:|---:|---:|---:|---:|---:|
+| faisca | 1 | 1,0 | 223 | 776 | 1,11 | +22 |
+| lanca_de_forca | 1 | 1,6 | 341 | 1226 | 1,32 | +73 |
+| golpe_de_cajado | 3 | 2,5 | 305 | 845 | 0,99 | +29 |
+| explosao_arcana | 5 | 1,4 | 457 | 1152 | 0,99 | +39 |
+| corrente_gelida | 12 | 2,2 | 997 | 1745 | 1,32 | +256 |
+| meteoro | 15 | 1,8 | 1042 | 1579 | 1,02 | +86 |
+| raio_duplo | 20 | 2,2 | 1607 | 1915 | 1,76 | +717 |
+| cataclismo | 25 | 2,5 | 2190 | 2365 | 1,02 | +72 |
+
+### Ranger
+
+| Skill | Nv | Escala | Golpe no Nv | Golpe Nv30 | Rende × básico (Nv30) | Ganho líquido no Nv |
+|---|---:|---:|---:|---:|---:|---:|
+| tiro_certeiro | 1 | 1,0 | 216 | 757 | 1,11 | +22 |
+| flecha_perfurante | 1 | 1,6 | 330 | 1195 | 1,32 | +71 |
+| chute_de_recuo | 3 | 1,3 | 274 | 941 | 1,24 | +30 |
+| chuva_de_flechas | 5 | 1,5 | 453 | 1180 | 0,97 | +18 |
+| tiro_duplo | 12 | 1,9 | 863 | 1499 | 1,32 | +230 |
+| flecha_flamejante | 15 | 1,7 | 962 | 1460 | 1,07 | +127 |
+| saraivada | 20 | 2,0 | 1444 | 1724 | 1,04 | +87 |
+| tiro_do_falcao | 25 | 3,1 | 2469 | 2686 | 1,31 | +614 |
