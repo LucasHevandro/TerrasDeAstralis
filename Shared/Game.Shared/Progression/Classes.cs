@@ -41,9 +41,13 @@ namespace Game.Shared.Progression
 
         public const int HotbarSize = 8;
 
-        /// <summary>Poder que soma no dano: skills físicas usam o ataque, mágicas usam o poder mágico.</summary>
+        /// <summary>
+        /// Poder que soma no dano: skills físicas usam o ataque; mágicas usam o maior entre o poder mágico e o ataque.
+        /// Sem isso, os golpes rúnicos da Lâmina (que tem pouca Inteligência) rendiam menos que o Corte e nunca valiam a
+        /// pena; para o Arcanista nada muda, porque o poder mágico dele é sempre o maior.
+        /// </summary>
         public static int PowerFor(SkillKind kind, StatBlock stats) =>
-            kind == SkillKind.Magical ? stats.MagicPower : stats.AttackPower;
+            kind == SkillKind.Magical ? Math.Max(stats.MagicPower, stats.AttackPower) : stats.AttackPower;
 
         /// <summary>Skills já liberadas, na ordem da barra.</summary>
         public static IEnumerable<SkillData> UnlockedSkills(CharacterClass characterClass, int level, Func<string, bool> questCompleted)
@@ -70,11 +74,14 @@ namespace Game.Shared.Progression
             _ => Blade,
         };
 
-        /// <summary>Rota de combo exclusiva da classe (soma-se às rotas gerais).</summary>
+        /// <summary>
+        /// Rota de combo exclusiva da classe (soma-se às rotas gerais). As do Arcanista e da Ranger fecham só com o
+        /// ataque básico, então valem menos que a da Lâmina, que pede o Golpe Rúnico no meio.
+        /// </summary>
         public static ComboRoute RouteFor(CharacterClass characterClass) => characterClass switch
         {
-            CharacterClass.Arcanist => new ComboRoute("sobrecarga", 0.20, SkillKind.Magical, SkillKind.Magical, SkillKind.Magical),
-            CharacterClass.Ranger => new ComboRoute("rajada_certeira", 0.20, SkillKind.Physical, SkillKind.Physical, SkillKind.Physical),
+            CharacterClass.Arcanist => new ComboRoute("sobrecarga", 0.10, SkillKind.Magical, SkillKind.Magical, SkillKind.Magical),
+            CharacterClass.Ranger => new ComboRoute("rajada_certeira", 0.10, SkillKind.Physical, SkillKind.Physical, SkillKind.Physical),
             _ => new ComboRoute("lamina_runica", 0.20, SkillKind.Physical, SkillKind.Magical, SkillKind.Physical),
         };
 

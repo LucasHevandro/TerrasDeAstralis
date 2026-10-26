@@ -62,9 +62,15 @@ namespace Game.Shared.Combat
 
         /// <summary>
         /// Tolerância extra, em segundos, aplicada dos dois lados da janela.
-        /// Zero no jogo offline; o servidor usa um valor maior para compensar a latência.
+        /// Zero no jogo offline; online, o servidor e o cliente usam <see cref="OnlineGraceSeconds"/>.
         /// </summary>
         public double GraceSeconds { get; set; } = 0.0;
+
+        /// <summary>
+        /// Folga do combo online. O servidor julga com ela, e o cliente prevê com a mesma: se o cliente julgasse sem
+        /// folga, mostraria "Miss" e encerraria o combo enquanto o servidor continua dando dano de combo.
+        /// </summary>
+        public const double OnlineGraceSeconds = 0.08;
 
         /// <summary>Rotas de combo reconhecidas. Lista vazia desliga as rotas.</summary>
         public List<ComboRoute> Routes { get; set; } = ComboRoute.CreateDefaults();

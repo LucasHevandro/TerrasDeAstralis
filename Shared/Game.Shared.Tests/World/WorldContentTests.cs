@@ -55,6 +55,28 @@ public class WorldContentTests
     }
 
     [Fact]
+    public void Monstro_agressivo_nao_alcanca_quem_conversa_com_um_npc()
+    {
+        // Pior caso: o monstro nasce na borda do raio e passeia na direção do NPC.
+        foreach (var spawn in WorldContent.Spawns().Where(s => s.Data.Aggressive && !s.IsBoss))
+        foreach (var npc in Game.Shared.Progression.NpcCatalog.All)
+        {
+            var centerDistance = MathF.Sqrt((spawn.CenterX - npc.X) * (spawn.CenterX - npc.X) + (spawn.CenterZ - npc.Z) * (spawn.CenterZ - npc.Z));
+            var closest = centerDistance - spawn.Radius - spawn.Data.WanderRadius;
+            Assert.True(closest >= spawn.Data.AggroRadius + 2,
+                $"{spawn.Data.Id} pode chegar a {closest:0.0} m de {npc.Id} (aggro {spawn.Data.AggroRadius} m)");
+        }
+    }
+
+    [Fact]
+    public void Mundo_aberto_tem_monstros_para_um_teste_com_vinte_jogadores()
+    {
+        var common = WorldContent.Spawns().Where(s => !s.IsBoss).ToList();
+        Assert.True(common.Sum(s => s.Count) >= 50);
+        Assert.All(common, s => Assert.True(s.Count >= 6, $"{s.Data.Id}: só {s.Count} monstros"));
+    }
+
+    [Fact]
     public void Cada_grupo_de_monstros_fica_dentro_de_uma_zona_do_nivel_certo()
     {
         var zones = WorldContent.Zones();

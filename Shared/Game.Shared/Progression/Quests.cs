@@ -170,7 +170,7 @@ namespace Game.Shared.Progression
             },
             new QuestDefinition
             {
-                Id = ClassCatalog.ComboQuestId, MinLevel = 3, PreviousQuestId = "primeiros_passos",
+                Id = ClassCatalog.ComboQuestId, MinLevel = 2, PreviousQuestId = "primeiros_passos",
                 Objectives = { new QuestObjective(QuestObjectiveKind.Kill, "coelho_saltador", 10) },
                 RewardXp = 1200, RewardAlz = 1500, RewardItems = { (ItemCatalog.CoreLow, 2) },
             },

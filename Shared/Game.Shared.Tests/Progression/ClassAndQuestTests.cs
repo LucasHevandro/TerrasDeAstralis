@@ -107,6 +107,45 @@ public class ClassTests
     }
 
     [Fact]
+    public void GuiaDaMissaoApontaOProximoPasso()
+    {
+        var pele = QuestCatalog.Get("pele_e_presa"); // 12 lobos e 6 peles, entregue ao Ancião
+        var lobos = WorldContent.Spawns().Single(s => s.Data.Id == "lobo_cinzento");
+
+        var hunt = QuestGuide.For(pele, new[] { 3, 0 })!.Value;
+        Assert.Equal(("lobo_cinzento", lobos.CenterX, lobos.CenterZ), (hunt.MonsterId, hunt.X, hunt.Z));
+
+        var skins = QuestGuide.For(pele, new[] { 12, 2 })!.Value; // as peles caem dos lobos
+        Assert.Equal("lobo_cinzento", skins.MonsterId);
+
+        var deliver = QuestGuide.For(pele, new[] { 12, 6 })!.Value;
+        Assert.Equal(NpcCatalog.Elder, deliver.NpcId);
+
+        var talk = QuestGuide.For(QuestCatalog.Get("rastros_na_trilha"), new[] { 0 })!.Value;
+        Assert.Equal(NpcCatalog.Scout, talk.NpcId);
+
+        // Chefe de dungeon não está no mundo aberto: o caminho é o portal da vila.
+        var crypt = QuestGuide.For(QuestCatalog.Get("a_cripta_esquecida"), new int[0])!.Value;
+        Assert.Equal(NpcCatalog.DungeonPortal, crypt.NpcId);
+    }
+
+    [Fact]
+    public void GolpeMagicoDaLaminaUsaOAtaqueQuandoEleEhMaior()
+    {
+        // A Lâmina tem pouca Inteligência: o Golpe Rúnico não pode render menos que o Corte por usar o poder mágico.
+        var stats = new StatBlock { AttackPower = 600, MagicPower = 250 };
+        Assert.Equal(600, ClassCatalog.PowerFor(SkillKind.Magical, stats));
+    }
+
+    [Fact]
+    public void RotaDaClasseQueFechaSoComOBasicoValeMenos()
+    {
+        Assert.Equal(0.20, ClassCatalog.RouteFor(CharacterClass.Blade).DamageBonus);
+        Assert.Equal(0.10, ClassCatalog.RouteFor(CharacterClass.Arcanist).DamageBonus);
+        Assert.Equal(0.10, ClassCatalog.RouteFor(CharacterClass.Ranger).DamageBonus);
+    }
+
+    [Fact]
     public void DespertarEncheComComboBemFeitoEDuraUmTempo()
     {
         var awakening = new AwakeningState();

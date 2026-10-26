@@ -78,7 +78,7 @@ namespace Game.Shared.World
         public static List<SpawnDefinition> Spawns() => new List<SpawnDefinition>
         {
             // Campos do Vento (Nv 1–10)
-            Spawn(-10, 36, 5, 7, new MonsterData
+            Spawn(-10, 36, 10, 10, new MonsterData
             {
                 Id = "coelho_saltador", Level = 2, MaxHp = 700, AttackDamage = 25,
                 AttackPower = 5, Defense = 20, AttackRange = 1.2f, MoveSpeed = 3.5f, BodyRadius = 0.35f, Aggressive = false,
@@ -89,7 +89,7 @@ namespace Game.Shared.World
                     new DropEntry("pocao_hp_p", ItemRarity.Common, 0.15),
                     Equip("armadura_ferro", 0.02), Equip("anel_ferro", 0.01)),
             }),
-            Spawn(10, 46, 4, 7, new MonsterData
+            Spawn(10, 46, 8, 9, new MonsterData
             {
                 Id = "lobo_cinzento", Level = 6, MaxHp = 1800, AttackDamage = 60,
                 AttackPower = 15, Defense = 40, AttackRange = 1.5f, MoveSpeed = 4.5f, AggroRadius = 8, Behavior = MonsterBehavior.Pack,
@@ -103,7 +103,7 @@ namespace Game.Shared.World
             }),
 
             // Mata Sombria (Nv 10–20)
-            Spawn(36, 79, 4, 8, new MonsterData
+            Spawn(38, 90, 8, 9, new MonsterData
             {
                 Id = "javali_furioso", Level = 12, MaxHp = 4400, AttackDamage = 120,
                 AttackPower = 40, Defense = 90, AttackRange = 1.6f, AttackWindupSeconds = 0.7f, MoveSpeed = 5f, Behavior = MonsterBehavior.Charger,
@@ -113,7 +113,7 @@ namespace Game.Shared.World
                     new DropEntry("nucleo_baixo", ItemRarity.Rare, 0.06),
                     Equip("armadura_aco_negro", 0.02), Equip("botas_aco_negro", 0.03), Equip("pedra_furia", 0.01)),
             }),
-            Spawn(54, 92, 4, 8, new MonsterData
+            Spawn(55, 97, 8, 9, new MonsterData
             {
                 Id = "aranha_da_mata", Level = 16, MaxHp = 5200, AttackDamage = 150,
                 AttackPower = 55, Defense = 80, AttackRange = 2f, AttackWindupSeconds = 0.5f, MoveSpeed = 4f, BodyRadius = 0.8f,
@@ -128,7 +128,7 @@ namespace Game.Shared.World
             }),
 
             // Ruínas Esquecidas (Nv 20–30)
-            Spawn(-37, 118, 3, 8, new MonsterData
+            Spawn(-40, 128, 6, 8, new MonsterData
             {
                 Id = "golem_de_pedra", Level = 22, MaxHp = 12000, AttackDamage = 240,
                 AttackPower = 80, Defense = 260, AttackRange = 2.2f, AttackCooldownSeconds = 3f,
@@ -139,7 +139,7 @@ namespace Game.Shared.World
                     new DropEntry("nucleo_medio", ItemRarity.Rare, 0.08),
                     Equip("armadura_astralita", 0.015), Equip("botas_astralita", 0.02), Equip("pedra_precisao", 0.01)),
             }),
-            Spawn(-53, 133, 4, 8, new MonsterData
+            Spawn(-58, 122, 8, 8, new MonsterData
             {
                 Id = "espectro", Level = 26, MaxHp = 9000, AttackDamage = 280,
                 AttackPower = 100, Defense = 120, AttackRange = 2.5f, AttackCooldownSeconds = 1.6f,
@@ -152,7 +152,7 @@ namespace Game.Shared.World
                     Equip("cajado_astralita", 0.01), Equip("arco_astralita", 0.01)),
             }),
 
-            Spawn(-30, 140, 3, 6, new MonsterData
+            Spawn(-30, 140, 6, 7, new MonsterData
             {
                 Id = "cavaleiro_caido", Level = 29, MaxHp = 14000, AttackDamage = 330,
                 AttackPower = 120, Defense = 230, AttackRange = 2.4f, AttackCooldownSeconds = 2.2f,

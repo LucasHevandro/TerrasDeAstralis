@@ -345,7 +345,7 @@ hud.grade_excellent = EXCELLENT
 hud.grade_good = GOOD
 hud.grade_miss = MISS
 hud.route = <b>{0} +{1:0}%</b>
-help.controls = <b>Controles</b>\n{0} andar · {1} correr · {2} esquivar\nBotão direito girar câmera · Roda zoom · {3} opções · {5} mapa\n{4} / clique: selecionar alvo · Esc tira o alvo e fecha janelas; sem nada aberto, abre as opções
+help.controls = <b>Controles</b>\n{0} correr · {1} andar devagar · {2} esquivar\nBotão direito girar câmera · Roda zoom · {3} opções · {5} mapa\n{4} / clique: selecionar alvo · Esc tira o alvo e fecha janelas; sem nada aberto, abre as opções
 help.keys_online = {0} skills · {1} coletar · {2} inventário · {3} atributos\n{4} falar com NPC · {5} missões · {6} Despertar\nEnter chat · {7} amigos · /convidar nome forma grupo\n/duelo nome desafia · /arena entra na fila 5v5
 help.keys_offline = {0} skills · {1} coletar itens · {2} inventário
 help.combo = {0} iniciar combo (gasta SP)\n{1} finalizador (depois de 3 acertos)\n\n<b>Rotas de combo</b> (F = físico, M = mágico)\nF→M ou M→F: Alternância +10%\nF F M: Tempestade +25% · M M F: Eco Arcano +25%
@@ -471,6 +471,8 @@ quest.reward = Recompensa: {0}
 quest.reward_xp = {0:N0} XP
 quest.reward_alz = {0:N0} Alz
 tracker.title = <b>Missões</b>  <size=13>({0} abre o diário)</size>
+tracker.go_to = → {0} ({1:0} m)
+tracker.go_to_zone = → {0}, {1} ({2:0} m)
 questlog.title = Diário de missões  <size=14>({0} fecha)</size>
 questlog.abandon = Abandonar
 questlog.completed = Concluídas: {0} de {1}
@@ -975,7 +977,7 @@ action.moveforward = Andar para frente
 action.moveback = Andar para trás
 action.moveleft = Andar para a esquerda
 action.moveright = Andar para a direita
-action.run = Correr (segurar)
+action.run = Andar devagar (segurar)
 action.dodge = Esquivar
 action.skill = Skill {0}
 action.startcombo = Iniciar combo
@@ -1031,7 +1033,7 @@ tutorial.title = Tutorial · passo {0} de {1}
 tutorial.title_done = Tutorial concluído
 tutorial.skip = Pular tutorial
 tutorial.ok = Entendi
-tutorial.move = Ande com <b>{0}</b>. Segure <b>{1}</b> para correr. Gire a câmera com o botão direito do mouse.
+tutorial.move = Corra com <b>{0}</b>. Segure <b>{1}</b> para andar devagar. Gire a câmera com o botão direito do mouse.
 tutorial.target = Chegue perto de um monstro e aperte <b>{0}</b> (ou clique nele) para escolher o alvo. O anel embaixo dele mostra quem está selecionado.
 tutorial.skill = Ataque com a skill <b>{0}</b>. Golpes corpo a corpo precisam de você perto do alvo; os mágicos alcançam mais longe.
 tutorial.dodge = Monstros avisam antes de bater (o chão pisca em vermelho). Aperte <b>{0}</b> para esquivar: na esquiva você não leva dano.
