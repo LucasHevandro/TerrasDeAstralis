@@ -273,3 +273,13 @@ Cada decisão importante fica registrada aqui com data e motivo, para não ser r
 - **P com o inventário aberto:** fecha os dois.
 - A prévia usa a mesma câmera da criação de personagem (`CharacterPreview`), em outro ponto do céu, e só existe com a
   janela aberta.
+
+## 2026-10-25 — Ataque automático
+
+- **Opção nas configurações** (Geral), desligada por padrão e salva no PlayerPrefs (`opcoes.autoataque`).
+- **Só fora do combo:** acertar o tempo da barra é a habilidade do jogo; o combo continua sempre manual, e o servidor
+  segue marcando como suspeito quem acerta Excellent demais.
+- **Como escolhe:** com alvo vivo selecionado e nada sendo conjurado, usa a primeira skill da barra (da esquerda para a
+  direita) liberada, fora da recarga, com MP e com o alvo no alcance. Não anda até o alvo nem escolhe alvo sozinho.
+- **Só no cliente:** usa o mesmo caminho do aperto da tecla, então o servidor não muda e o protocolo também não.
+- **Teste:** o `-onlinefight` liga a opção, seleciona um coelho e confere que ele morre sem nenhum aperto.
