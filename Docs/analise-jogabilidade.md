@@ -71,6 +71,38 @@ Lâmina, a Execução, dá 1.404 por golpe, mas com 100 MP e 15 s de recarga ren
 
 ## Onda 2: junto ou logo depois
 
+**Feita em 2026-10-25**, com testes:
+
+- **Monstros:** dano ×2,5 (coelho ×2). O Guardião tem o triplo de vida (180 mil) e 50% a mais de dano.
+- **Monstros novos nas lacunas:** Lobo Alfa (Nv9, norte dos Campos), Aranha Rainha (Nv19, borda da Mata a caminho das
+  Ruínas) e Cavaleiro Errante (Nv28, entrada da arena, que passa a ser Nv 28 a 30). No cliente, são variantes de
+  modelos existentes (`VisualCatalog.Variants`).
+- **Fogueiras de retorno:** quem morre no mundo aberto renasce na fogueira mais perto (`WorldContent.RespawnPoints`:
+  vila, acampamento da Mata, acampamento das Ruínas e entrada da arena). Elas aparecem como braseiros acesos no mundo e
+  como pontos laranja no mapa.
+- **Dungeons:** monstros com 75% da vida, para uma dupla terminar dentro do tempo.
+- **XP e missões:** lobo de 70 para 100 de XP; `diaria_lobos` de 3.000 para 1.500; primeira missão de Nara no Nv10;
+  missão nova de Veska no Nv22 (`pedras_sussurrantes`).
+- **Alz:** `ecos_espectrais` de 80 mil para 40 mil e `o_guardiao` de 200 mil para 60 mil.
+- **Equipamento:** a mercadora vende o conjunto de Aço Negro (arma 3.500, armadura 3.000, luvas e botas 1.500, anel
+  2.000).
+- **Combate no cliente:**
+  - A esquiva vira o corpo para a direção e não acontece com o personagem morto.
+  - Os golpes duplos mostram metade do dano em cada impacto.
+  - A correção pequena do servidor (até 3 m) desliza em 0,1 s.
+  - A câmera suaviza a altura, volta devagar depois de encostar num obstáculo e treme com ruído suave.
+  - A dica da barra mostra o dano, o alcance e a área da skill.
+- **Subida no simulador:** 5,2 a 5,5 h. As faixas dos testes de tempo foram para 5 a 10 h (normal), 3,5 a 9 h (rápido)
+  e 6 a 16 h (lento).
+
+**Ficou para depois:**
+
+- **Esquiva compensando a latência:** precisa do horário do cliente no `MoveInput` (protocolo novo) e de o servidor
+  aplicar o golpe do monstro com um pequeno atraso.
+- **Reativar o combo do cliente** quando o servidor diz que ele continua.
+- **Monstro que apanha durante o aviso de ataque.**
+- **Golpes de outros jogadores com o número antes da animação.**
+
 **Combate e skills**
 - **Escada de skills em área invertida:** a skill nova rende menos por alvo que a antiga. Flecha Flamejante (Nv15, raio
   3 m) perde para a Chuva de Flechas (Nv5, raio 4 m); Meteoro e Cataclismo perdem para a Explosão Arcana. Valores
