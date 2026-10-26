@@ -880,7 +880,7 @@ namespace Game.Client.UI
             if (active.Count == 0) return;
             var x = VirtualWidth - 470f;
             var y = Minimap.PanelsTop;
-            var height = 40f + active.Sum(q => 28f + 20f * (QuestCatalog.Find(q.QuestId)?.Objectives.Count ?? 0));
+            var height = 40f + active.Sum(q => 48f + 20f * (QuestCatalog.Find(q.QuestId)?.Objectives.Count ?? 0));
             Box(new Rect(x, y, 450, height), new Color(0, 0, 0, 0.45f));
             GUI.Label(new Rect(x + 12, y + 6, 420, 24), Loc.T("tracker.title", KeyBindings.Label(GameAction.QuestLog)), _small);
             y += 34;
@@ -896,8 +896,23 @@ namespace Game.Client.UI
                     GUI.Label(new Rect(x + 22, y, 410, 20), ObjectiveText(quest.Objectives[i], done, true), _tiny);
                     y += 20;
                 }
-                y += 4;
+                GUI.Label(new Rect(x + 22, y, 410, 20), $"<color=#9fd0ff>{DestinationText(quest, entry.Counts)}</color>", _tiny);
+                y += 24;
             }
+        }
+
+        /// <summary>"→ Batedora Nara, Mata Sombria (80 m)": para onde ir no próximo passo da missão.</summary>
+        private static string DestinationText(QuestDefinition quest, IReadOnlyList<int> counts)
+        {
+            if (!(QuestGuide.For(quest, counts) is { } destination) || Player == null) return "";
+            var name = destination.NpcId != "" ? NpcCatalog.Find(destination.NpcId)?.Name : Loc.T(Loc.Key("monster.", destination.MonsterId));
+            var position = new Vector3(destination.X, 0, destination.Z);
+            var here = Player.transform.position;
+            var distance = Vector2.Distance(new Vector2(here.x, here.z), new Vector2(destination.X, destination.Z));
+            var zone = Game.Client.World.ZoneArea.At(position);
+            return zone != null
+                ? Loc.T("tracker.go_to_zone", name, zone.DisplayName, distance)
+                : Loc.T("tracker.go_to", name, distance);
         }
 
         private void DrawQuestLog()
@@ -1062,7 +1077,7 @@ namespace Game.Client.UI
         /// Marcador em cima de quem dá missões: "?" amarelo = tem missão dele pronta para entregar; "!" amarelo = tem missão
         /// nova para o nível do jogador; "?" cinza = missão dele em andamento. Nulo = nada a mostrar.
         /// </summary>
-        private static (string Text, Color Color)? QuestMarker(NpcDefinition npc)
+        internal static (string Text, Color Color)? QuestMarker(NpcDefinition npc)
         {
             if (npc.Role != NpcRole.QuestGiver || Player == null) return null;
             var active = false;

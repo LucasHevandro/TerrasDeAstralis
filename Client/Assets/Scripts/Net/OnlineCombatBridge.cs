@@ -123,7 +123,9 @@ namespace Game.Client.Net
             }
             // Monstros e, no PvP, outros jogadores.
             var view = _session.FindView(hit.TargetId);
-            if (view != null && !hit.Dodged && hit.Damage > 0) VisualAnimator.Trigger(view, "Hit");
+            // Meu golpe: o alvo só pisca quando a arma (ou a flecha) chega, junto com o número (ShowServerHit espera).
+            var mine = hit.AttackerId == _session.PlayerId;
+            if (view != null && !mine && !hit.Dodged && hit.Damage > 0) VisualAnimator.Trigger(view, "Hit");
             if (view != null && view.Target != null && (view.Kind == EntityKind.Monster || hit.AttackerId == _session.PlayerId))
                 _combat.ShowServerHit(hit, view.Target, hit.AttackerId == _session.PlayerId);
         }

@@ -37,7 +37,9 @@ namespace Game.Client.UI
         private static readonly Color Border = new Color(1f, 0.82f, 0.35f, 0.8f);
         private static readonly Color MonsterColor = new Color(0.95f, 0.3f, 0.25f);
         private static readonly Color BossColor = new Color(1f, 0.55f, 0.1f);
-        private static readonly Color NpcColor = new Color(1f, 0.85f, 0.3f);
+        // NPC sem missão em tom neutro, para o amarelo e o azul dos marcadores de missão se destacarem.
+        private static readonly Color NpcColor = new Color(0.85f, 0.82f, 0.72f);
+        private static readonly Color QuestDestinationColor = new Color(1f, 0.85f, 0.2f);
         private static readonly Color PlayerColor = new Color(0.45f, 0.75f, 1f);
         private static readonly Color PartyColor = new Color(0.4f, 1f, 0.5f);
         private static readonly Color LootColor = new Color(1f, 1f, 1f, 0.85f);
@@ -114,7 +116,25 @@ namespace Game.Client.UI
                 foreach (var npc in NpcCatalog.All)
                 {
                     var p = ToMap(npc.X, npc.Z);
-                    Dot(p, big ? 11 : 8, NpcColor);
+                    // Quem tem missão para dar ou receber aparece com a cor e o símbolo do marcador ("!" ou "?").
+                    var marker = GameWindows.QuestMarker(npc);
+                    Dot(p, big ? 11 : 8, marker?.Color ?? NpcColor);
+                    if (marker is { } m)
+                        GUI.Label(new Rect(p.x - 12, p.y - (big ? 26 : 22), 24, 18), $"<b>{m.Text}</b>", _label.WithCenter());
+                    // Nome só de quem dá missões: os NPCs da vila ficam juntos e os nomes se sobrepunham.
+                    if (big && npc.Role == NpcRole.QuestGiver)
+                        GUI.Label(new Rect(p.x - 70, p.y + 6, 140, 18), $"<size=12>{npc.Name}</size>", _label.WithCenter());
+                }
+
+                // Destino das missões aceitas: no minimapa, preso à borda quando está longe.
+                foreach (var progress in CharacterState.Quests.Active)
+                {
+                    var quest = QuestCatalog.Find(progress.QuestId);
+                    if (quest == null || !(QuestGuide.For(quest, progress.Counts) is { } destination) || destination.NpcId != "") continue;
+                    var p = ToMap(destination.X, destination.Z);
+                    p.x = Mathf.Clamp(p.x, 8, local.width - 8);
+                    p.y = Mathf.Clamp(p.y, 8, local.height - 8);
+                    Ring(p, big ? 18 : 12, QuestDestinationColor);
                 }
             }
 

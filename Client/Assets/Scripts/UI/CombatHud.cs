@@ -182,7 +182,7 @@ namespace Game.Client.UI
             Box(new Rect(rect.x + rect.width * (center - half), rect.y, rect.width * half * 2, rect.height), ExcellentColor);
 
             // Marcador.
-            var cursor = Mathf.Clamp01((float)combo.GetCursor(now));
+            var cursor = Mathf.Clamp01((float)combo.GetCursor(PlayerCombat.ComboNow));
             Box(new Rect(rect.x + rect.width * cursor - 3, rect.y - 8, 6, rect.height + 16), Color.white);
 
             GUI.Label(new Rect(rect.x, rect.y - 46, rect.width, 36), Loc.T("hud.combo_hits", combo.HitCount), _big.WithAlignment(TextAnchor.MiddleLeft));

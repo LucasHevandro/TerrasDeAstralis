@@ -345,7 +345,7 @@ namespace Game.Client.DevTools
                     for (var i = 0; i < 3 && combat.Combo.State == Shared.Combat.ComboState.Active && !rabbit.IsDead; i++)
                     {
                         while (combat.Combo.State == Shared.Combat.ComboState.Active &&
-                               combat.Combo.GetCursor(Time.time) < combat.Combo.Config.WindowCenter)
+                               combat.Combo.GetCursor(PlayerCombat.ComboNow) < combat.Combo.Config.WindowCenter)
                         {
                             Follow(motor, rabbit); // coelhos passeiam: acompanha como um jogador faria
                             yield return null;
@@ -615,6 +615,20 @@ namespace Game.Client.DevTools
                 yield break;
             }
             CharacterState.CloseDialog();
+
+            // Painel de missões com o destino ("→ Coelho Saltador, Campos do Vento") e o anel no minimapa.
+            NetworkSession.Instance.Send(new QuestCommand { Action = QuestActionKind.Accept, QuestId = "diaria_coelhos" });
+            yield return WaitFor(() => CharacterState.CountsOf("diaria_coelhos") != null, 3f);
+            var daily = CharacterState.CountsOf("diaria_coelhos");
+            if (daily == null || QuestGuide.For(QuestCatalog.Get("diaria_coelhos"), daily) == null)
+            {
+                outcome.Message = "a diária do caçador não foi aceita ou não tem destino";
+                yield break;
+            }
+            yield return new WaitForSecondsRealtime(0.4f);
+            Capture("8d2-missao-destino");
+            yield return new WaitForEndOfFrame();
+            Log("Missão aceita com destino no painel e no minimapa");
 
             // Janela de opções (F10) por cima do jogo.
             OptionsWindow.Open();

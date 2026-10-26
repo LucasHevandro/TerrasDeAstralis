@@ -95,7 +95,7 @@ namespace Game.Client.DevTools
             {
                 // Espera o marcador chegar ao centro da janela e aperta a skill 1.
                 while (combat.Combo.State == ComboState.Active &&
-                       combat.Combo.GetCursor(Time.time) < combat.Combo.Config.WindowCenter)
+                       combat.Combo.GetCursor(PlayerCombat.ComboNow) < combat.Combo.Config.WindowCenter)
                     yield return null;
                 if (combat.Combo.State != ComboState.Active) break;
 

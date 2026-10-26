@@ -61,12 +61,22 @@ namespace Game.Client.Combat
         private SkillCooldowns _cooldowns;
         private float _unlockMovementAt;
 
+        /// <summary>Tempo parado depois do impacto do golpe, antes de voltar a andar.</summary>
+        private const float MoveLockAfterImpact = 0.1f;
+
         // Conjuração (fora do combo): até quando o golpe atual dura, e a skill que espera ele acabar (só a última pedida).
         private const float SkillQueueSeconds = 1.5f;
         private float _castUntil;
         private float _castStartedAt;
         private int _queuedSkill = -1;
         private float _queuedAt;
+
+        /// <summary>
+        /// Relógio do combo: o tempo real, sem o congelamento do hit stop. O servidor julga o aperto em tempo real; com
+        /// o relógio do jogo (que para alguns centésimos a cada acerto), a janela da barra ficava deslocada da que o
+        /// servidor confere, e um aperto no verde podia virar Miss.
+        /// </summary>
+        public static double ComboNow => Time.unscaledTimeAsDouble;
 
         /// <summary>A skill sendo conjurada agora (nulo se nenhuma).</summary>
         public SkillData Casting => Time.time < _castUntil ? _casting : null;
@@ -234,7 +244,7 @@ namespace Game.Client.Combat
             }
             if (ConnectMenu.IsOpen) return;
 
-            if (Combo.Tick(now)) OnComboEnded(Loc.T("combo.reason_timeout"));
+            if (Combo.Tick(ComboNow)) OnComboEnded(Loc.T("combo.reason_timeout"));
             KeepComboOnTargetDeath();
             if (!GameMode.IsOnline) RegenerateMp();
 
@@ -288,7 +298,7 @@ namespace Game.Client.Combat
                 SoundPlayer.Play(SoundId.Error, 0.6f, 0f);
                 return;
             }
-            Combo.TryStart(now);
+            Combo.TryStart(ComboNow);
             if (Online) NetworkSession.Instance.Send(new Msg.StartCombo { TargetId = Target.NetworkId, ClientTime = ServerNow });
             SoundPlayer.Play(SoundId.ComboStart, 0.8f, 0f);
             ShowMessage(Loc.T("combo.started"));
@@ -379,7 +389,7 @@ namespace Game.Client.Combat
             ComboGrade? grade = null;
             if (inCombo)
             {
-                var result = Combo.Press(now, skill.Kind);
+                var result = Combo.Press(ComboNow, skill.Kind);
                 LastGrade = result.Grade;
                 LastGradeAt = Time.unscaledTime;
                 if (result.ComboEnded)
@@ -403,7 +413,6 @@ namespace Game.Client.Combat
             }
 
             SkillRules.TryUse(skill, index, _cooldowns, Mp, distance, Time.time);
-            _unlockMovementAt = Time.time + skill.LockSeconds;
             if (!inCombo)
             {
                 _casting = skill;
@@ -417,6 +426,8 @@ namespace Game.Client.Combat
             var move = SkillMoves.For(skill.Id);
             var pace = grade == ComboGrade.Excellent ? 1.15f : 1f;
             var impact = (move != null ? move.FirstImpact : 0f) / pace;
+            // Parado até o golpe acertar: andando com a animação do golpe ainda tocando, o personagem patinava.
+            _unlockMovementAt = Time.time + Mathf.Max(skill.LockSeconds, impact + MoveLockAfterImpact);
             VisualAnimator.Attack(this, AttackStyle.For(skill), pace);
             WeaponFx.Play(this, skill, grade);
             // Magias e flechas viajam até o alvo; os golpes de perto acertam na hora do impacto.
@@ -704,6 +715,9 @@ namespace Game.Client.Combat
             _cooldowns = new SkillCooldowns(skills.Count);
             var config = comboTuning.ToConfig();
             config.Routes.Add(ClassCatalog.RouteFor(characterClass));
+            // Online, a previsão usa a mesma folga do servidor: sem ela, o cliente mostrava Miss na borda da janela
+            // enquanto o servidor seguia dando dano de combo.
+            if (GameMode.IsOnline) config.GraceSeconds = ComboConfig.OnlineGraceSeconds;
             Combo = new ComboSession(config);
         }
 
@@ -767,6 +781,7 @@ namespace Game.Client.Combat
             }
             var grade = hit.Grade == 255 ? (ComboGrade?)null : (ComboGrade)hit.Grade;
             var finisher = hit.Source == Msg.CombatSource.Finisher;
+            if (mine && !hit.Dodged && hit.Damage > 0) VisualAnimator.Trigger(target, "Hit");
             if (mine && finisher) FinishersLanded++;
             else if (mine) HitsLanded++;
             var color = finisher ? new Color(1f, 0.45f, 0.1f) : DamageColor(grade, hit.Critical);

@@ -4,7 +4,8 @@ using UnityEngine.InputSystem;
 namespace Game.Client.Player
 {
     /// <summary>
-    /// Movimento em terceira pessoa relativo à câmera: andar (WASD), correr (Shift) e esquivar (Espaço).
+    /// Movimento em terceira pessoa relativo à câmera: correr (WASD), andar devagar (Shift) e esquivar (Espaço).
+    /// Corre por padrão: segurar Shift o caminho todo até as regiões de caça cansava.
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
     public sealed class PlayerMotor : MonoBehaviour
@@ -108,7 +109,7 @@ namespace Game.Client.Player
             }
             else
             {
-                var speed = UI.KeyBindings.Held(UI.GameAction.Run) ? runSpeed : walkSpeed;
+                var speed = UI.KeyBindings.Held(UI.GameAction.Run) ? walkSpeed : runSpeed;
                 horizontal = moveDirection * speed;
                 if (moveDirection.sqrMagnitude > 0.01f) FaceDirection(moveDirection);
             }
