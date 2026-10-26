@@ -227,7 +227,7 @@ namespace Game.Client.Net
                     MessageReceived?.Invoke(snapshot);
                     break;
                 case PositionCorrection correction:
-                    if (_motor != null) _motor.Teleport(Game.Client.World.Ground.Point(correction.X, correction.Z));
+                    if (_motor != null) _motor.Correct(Game.Client.World.Ground.Point(correction.X, correction.Z));
                     break;
                 case Notice notice:
                     if (notice.Announcement) CombatHud.Announce(notice.Text.ToString());

@@ -39,6 +39,17 @@ namespace Game.Client.Player
         /// <summary>Quando falso, o jogador não anda (ex.: durante um golpe pesado).</summary>
         public bool MovementLocked { get; set; }
 
+        /// <summary>Morto: não anda nem esquiva.</summary>
+        public bool Dead { get; set; }
+
+        /// <summary>Correção pequena do servidor, aplicada aos poucos em vez de um salto seco.</summary>
+        private Vector3 _correction;
+        private float _correctionTime;
+
+        /// <summary>Até esta distância a correção do servidor desliza; acima dela, teleporta.</summary>
+        private const float SmoothCorrectionMeters = 3f;
+        private const float SmoothCorrectionSeconds = 0.1f;
+
         public void SetCamera(Transform cam) => cameraTransform = cam;
 
         /// <summary>Quantas esquivas já começaram (a rede avisa o servidor quando muda).</summary>
@@ -74,6 +85,24 @@ namespace Game.Client.Player
             _verticalVelocity = 0;
         }
 
+        /// <summary>
+        /// Correção de posição do servidor: pequena, desliza em ~0,1 s (o jogador quase não percebe); grande (renascer,
+        /// entrar na dungeon), teleporta.
+        /// </summary>
+        public void Correct(Vector3 position)
+        {
+            var offset = position - transform.position;
+            offset.y = 0;
+            if (offset.magnitude > SmoothCorrectionMeters)
+            {
+                _correctionTime = 0;
+                Teleport(position);
+                return;
+            }
+            _correction = offset;
+            _correctionTime = SmoothCorrectionSeconds;
+        }
+
         private void Awake()
         {
             _controller = GetComponent<CharacterController>();
@@ -87,10 +116,12 @@ namespace Game.Client.Player
             var input = keyboard != null ? ReadMoveInput(keyboard) : Vector2.zero;
             var moveDirection = ToWorldDirection(input);
 
-            if (UI.KeyBindings.Pressed(UI.GameAction.Dodge) && Time.time >= _nextDodgeAt)
+            if (UI.KeyBindings.Pressed(UI.GameAction.Dodge) && Time.time >= _nextDodgeAt && !Dead)
             {
-                // Esquiva na direção do movimento; parado, esquiva para trás.
+                // Esquiva na direção do movimento; parado, esquiva para trás. O corpo vira para onde vai: a animação é
+                // de rolar para a frente, e de lado ou de costas o personagem deslizava.
                 _dodgeDirection = moveDirection.sqrMagnitude > 0.01f ? moveDirection : -transform.forward;
+                transform.rotation = Quaternion.LookRotation(_dodgeDirection);
                 _dodgeEndsAt = Time.time + dodgeDuration;
                 _nextDodgeAt = Time.time + dodgeCooldown;
                 DodgeCount++;
@@ -118,7 +149,14 @@ namespace Game.Client.Player
             _verticalVelocity += gravity * Time.deltaTime;
 
             CurrentSpeed = horizontal.magnitude;
-            _controller.Move((horizontal + Vector3.up * _verticalVelocity) * Time.deltaTime);
+            var correction = Vector3.zero;
+            if (_correctionTime > 0)
+            {
+                correction = _correction * Mathf.Min(1f, Time.deltaTime / _correctionTime);
+                _correction -= correction;
+                _correctionTime -= Time.deltaTime;
+            }
+            _controller.Move((horizontal + Vector3.up * _verticalVelocity) * Time.deltaTime + correction);
             StayOnBridge();
             if (CurrentSpeed > 0.5f) PlaySteps(CurrentSpeed > walkSpeed + 0.1f);
             else _lastStepPosition = transform.position;

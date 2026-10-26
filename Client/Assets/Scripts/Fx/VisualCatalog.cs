@@ -28,6 +28,10 @@ namespace Game.Client.Fx
         public static readonly Dictionary<string, (string BaseId, float Scale, Color Tint)> Variants = new Dictionary<string, (string, float, Color)>
         {
             ["sentinela_de_pedra"] = ("golem_de_pedra", 1.25f, new Color(1f, 0.86f, 0.62f)),
+            // Monstros das lacunas de nível no mundo aberto (2026-10-25).
+            ["lobo_alfa"] = ("lobo_cinzento", 1.25f, new Color(0.62f, 0.58f, 0.66f)),
+            ["aranha_rainha"] = ("aranha_da_mata", 1.3f, new Color(0.95f, 0.6f, 1.15f)),
+            ["cavaleiro_errante"] = ("cavaleiro_caido", 1.05f, new Color(0.7f, 0.85f, 1.15f)),
             ["espectro_ancestral"] = ("espectro", 1.15f, new Color(0.55f, 0.95f, 1.15f)),
             ["cavaleiro_juramentado"] = ("cavaleiro_caido", 1.15f, new Color(1.1f, 0.9f, 0.55f)),
             ["eco_do_oraculo"] = ("servo_da_cripta", 1f, new Color(0.55f, 1f, 1.15f)),

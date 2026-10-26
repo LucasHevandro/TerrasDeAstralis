@@ -40,6 +40,7 @@ namespace Game.Client.UI
         // NPC sem missão em tom neutro, para o amarelo e o azul dos marcadores de missão se destacarem.
         private static readonly Color NpcColor = new Color(0.85f, 0.82f, 0.72f);
         private static readonly Color QuestDestinationColor = new Color(1f, 0.85f, 0.2f);
+        private static readonly Color CampColor = new Color(1f, 0.5f, 0.15f);
         private static readonly Color PlayerColor = new Color(0.45f, 0.75f, 1f);
         private static readonly Color PartyColor = new Color(0.4f, 1f, 0.5f);
         private static readonly Color LootColor = new Color(1f, 1f, 1f, 0.85f);
@@ -113,6 +114,15 @@ namespace Game.Client.UI
             var session = NetworkSession.Instance;
             if (session != null && dungeon == null && !IsArena)
             {
+                // Fogueiras de retorno (a da vila é a própria vila): ponto laranja, com o nome no mapa grande.
+                for (var i = 1; i < WorldContent.RespawnPoints.Count; i++)
+                {
+                    var camp = WorldContent.RespawnPoints[i];
+                    var p = ToMap(camp.X, camp.Z);
+                    Dot(p, big ? 10 : 7, CampColor);
+                    if (big) GUI.Label(new Rect(p.x - 80, p.y + 6, 160, 18), $"<size=12><color=#ffb060>{camp.Name}</color></size>", _label.WithCenter());
+                }
+
                 foreach (var npc in NpcCatalog.All)
                 {
                     var p = ToMap(npc.X, npc.Z);

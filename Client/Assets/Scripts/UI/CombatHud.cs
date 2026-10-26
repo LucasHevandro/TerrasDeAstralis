@@ -468,14 +468,17 @@ namespace Game.Client.UI
             ShadowLabel(new Rect(rect.x, rect.y - 24, rect.width, 18), casting.Name, _key.WithCenter(), Color.white, 1f);
         }
 
-        /// <summary>Nome, tipo, MP e recarga da skill embaixo do mouse.</summary>
+        /// <summary>Nome, tipo, MP, recarga, dano, alcance e área da skill embaixo do mouse.</summary>
         private void DrawSkillTooltip(SkillData skill, int index, Vector2 mouse)
         {
             var kind = skill.Kind == SkillKind.Physical ? Loc.T("hud.kind_physical") : Loc.T("hud.kind_magical");
             if (skill.MpCost > 0) kind = Loc.T("hud.kind_with_mp", kind, skill.MpCost);
-            var text = $"<b>{skill.Name}</b>\n<size=14>{kind} · {skill.CooldownSeconds:0.#} s</size>";
+            var info = skill.AreaRadius > 0
+                ? Loc.T("skill.info_area", skill.BaseDamage, skill.PowerScale, skill.Range, skill.AreaRadius)
+                : Loc.T("skill.info", skill.BaseDamage, skill.PowerScale, skill.Range);
+            var text = $"<b>{skill.Name}</b>\n<size=14>{kind} · {skill.CooldownSeconds:0.#} s</size>\n<size=13>{info}</size>";
             if (GameMode.IsOnline && !CharacterState.SkillUnlocked(index)) text += $"\n<size=14><color=#ff8a7a>{combat.UnlockText(index)}</color></size>";
-            var rect = new Rect(Mathf.Clamp(mouse.x - 120, 10, VirtualWidth - 250), BarTop - 92, 240, 74);
+            var rect = new Rect(Mathf.Clamp(mouse.x - 160, 10, VirtualWidth - 330), BarTop - 112, 320, 94);
             UiTheme.Panel(rect, 0.95f);
             GUI.Label(new Rect(rect.x + 10, rect.y + 6, rect.width - 20, rect.height - 12), text, _small);
         }

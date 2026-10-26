@@ -33,6 +33,14 @@ namespace Game.Client.Player
         private float _shakeEndsAt;
         private float _shakeDuration;
 
+        // Suavização: a altura do pivô segue o jogador com um pequeno atraso (degraus e correções do servidor não
+        // pulam na tela), e a câmera volta devagar depois de encostar num obstáculo (entra rápido, sai devagar).
+        private float _pivotY = float.NaN;
+        private float _pivotYVelocity;
+        private float _shownDistance = float.NaN;
+        private const float PivotSmoothSeconds = 0.08f;
+        private const float DistanceReturnSpeed = 6f;
+
         public void SetTarget(Transform newTarget) => target = newTarget;
 
         /// <summary>Gira a câmera para olhar na direção dada (testes automáticos).</summary>
@@ -59,6 +67,11 @@ namespace Game.Client.Player
 
             var rotation = Quaternion.Euler(_pitch, _yaw, 0);
             var pivot = target.position + targetOffset;
+            var dt = Time.unscaledDeltaTime;
+            // Salto grande (renascer, dungeon): acompanha na hora.
+            if (float.IsNaN(_pivotY) || Mathf.Abs(pivot.y - _pivotY) > 5f) _pivotY = pivot.y;
+            else _pivotY = Mathf.SmoothDamp(_pivotY, pivot.y, ref _pivotYVelocity, PivotSmoothSeconds, Mathf.Infinity, dt);
+            pivot.y = _pivotY;
             var desired = pivot - rotation * Vector3.forward * distance;
 
             // Encosta a câmera em obstáculos entre o jogador e ela.
@@ -70,7 +83,10 @@ namespace Game.Client.Player
                 actualDistance = Mathf.Max(0.5f, hit.distance);
             }
 
-            transform.position = pivot - rotation * Vector3.forward * actualDistance + ShakeOffset(rotation);
+            _shownDistance = float.IsNaN(_shownDistance) || actualDistance < _shownDistance
+                ? actualDistance
+                : Mathf.MoveTowards(_shownDistance, actualDistance, DistanceReturnSpeed * dt);
+            transform.position = pivot - rotation * Vector3.forward * _shownDistance + ShakeOffset(rotation);
             transform.rotation = rotation;
         }
 
@@ -96,7 +112,9 @@ namespace Game.Client.Player
             var remaining = _shakeEndsAt - Time.unscaledTime;
             if (remaining <= 0) return Vector3.zero;
             var strength = _shakeAmplitude * (remaining / _shakeDuration);
-            var offset = Random.insideUnitCircle * strength;
+            // Ruído suave em vez de um ponto ao acaso por quadro: treme sem "chiar".
+            var t = Time.unscaledTime * 28f;
+            var offset = new Vector2(Mathf.PerlinNoise(t, 0.3f) - 0.5f, Mathf.PerlinNoise(0.7f, t) - 0.5f) * (2f * strength);
             return rotation * new Vector3(offset.x, offset.y, 0);
         }
     }

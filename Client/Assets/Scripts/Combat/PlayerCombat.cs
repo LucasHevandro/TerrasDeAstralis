@@ -227,7 +227,11 @@ namespace Game.Client.Combat
         private void Update()
         {
             var now = Time.time;
-            if (_motor != null) _motor.MovementLocked = IsDead || now < _unlockMovementAt;
+            if (_motor != null)
+            {
+                _motor.MovementLocked = IsDead || now < _unlockMovementAt;
+                _motor.Dead = IsDead;
+            }
 
             // A conjuração acabou: sai a skill da fila (se não esperou demais).
             if (_queuedSkill >= 0 && now >= _castUntil)
@@ -809,9 +813,22 @@ namespace Game.Client.Combat
             var color = finisher ? new Color(1f, 0.45f, 0.1f) : DamageColor(grade, hit.Critical);
             if (!mine) color = Color.Lerp(color, Color.gray, 0.5f);
 
-            var text = finisher ? Loc.T("fx.final", hit.Damage) : hit.Critical ? $"{hit.Damage}!" : hit.Damage.ToString();
-            DamageNumbers.Spawn(target.HeadPosition, text, color, finisher ? 38f : mine ? (hit.Critical ? 32f : 26f) : 20f);
             var skill = mine && !finisher && hit.Source < skills.Count ? skills[hit.Source] : null;
+            var size = finisher ? 38f : mine ? (hit.Critical ? 32f : 26f) : 20f;
+            // Golpe de dois impactos (Estocada Dupla, Raio Duplo...): o servidor manda o dano somado; mostra metade em
+            // cada impacto, senão o segundo parecia não fazer nada.
+            var move = skill != null ? SkillMoves.For(skill.Id) : null;
+            var shown = move != null && move.Impacts.Length > 1 ? hit.Damage / 2 : hit.Damage;
+            var text = finisher ? Loc.T("fx.final", hit.Damage) : hit.Critical ? $"{shown}!" : shown.ToString();
+            DamageNumbers.Spawn(target.HeadPosition, text, color, size);
+            if (shown != hit.Damage)
+            {
+                var rest = hit.Damage - shown;
+                After(move.Impacts[1] - move.Impacts[0], () =>
+                {
+                    if (target != null) DamageNumbers.Spawn(target.HeadPosition, hit.Critical ? $"{rest}!" : rest.ToString(), color, size);
+                });
+            }
             var weight = 0f;
             if (skill != null) weight = SkillFx.OnImpact(skill, target.CenterPosition, grade, hit.Critical);
             else if (CombatFx.Instance != null)
