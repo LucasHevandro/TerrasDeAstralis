@@ -185,7 +185,9 @@ public class SocialWorldTests
         monster.DamageBy[p[0].Id] = 299;
 
         world.Handle(p[0].Id, new UseSkill { Slot = 0, TargetId = monster.Id }, 5);
-        Assert.Equal(0, p[2].Progress.Xp);
+        // O solo perdeu para a soma do grupo: ajudou bastante, então leva o XP, mas nem o Alz nem o drop.
+        Assert.True(p[2].Progress.Xp > 0);
+        Assert.Equal(0, p[2].Alz);
         Assert.True(p[0].Progress.Xp > 0);
         Assert.True(p[1].Progress.Xp > 0);
         // Dentro do grupo, quem bateu mais é o dono do drop.

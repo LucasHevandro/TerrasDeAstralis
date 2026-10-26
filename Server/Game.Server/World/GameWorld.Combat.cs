@@ -464,6 +464,7 @@ public sealed partial class GameWorld
         var fighters = monster.Spawn.Scheduled
             ? monster.DamageBy.Where(d => d.Value > 0).Select(d => _players.GetValueOrDefault(d.Key)).OfType<ServerPlayer>().ToList()
             : null;
+        var helpers = Helpers(monster);
         monster.DamageBy.Clear();
         monster.AggroPlayerId = 0;
         if (killer == null) return;
@@ -496,6 +497,18 @@ public sealed partial class GameWorld
             Notify(member, LT("reward.xp_alz", xp, alzParts[i]));
         }
 
+        // Quem ajudou de fora do grupo vencedor (com dano suficiente) também ganha o XP e conta na missão; o Alz e o
+        // drop ficam com quem matou. Sem isso, em acampamento cheio o abate ia todo para quem bateu mais.
+        foreach (var helper in helpers.Where(h => !sharing.Contains(h) && !h.IsDead))
+        {
+            var xp = XpRules.Adjusted(xpReward, helper.Progress.Level, monster.Data.Level);
+            GrantXp(helper, xp);
+            helper.Session.Kills++;
+            if (helper.Quests.OnKill(monster.Data.Id).Count > 0) helper.QuestsDirty = true;
+            helper.StatsDirty = true;
+            Notify(helper, LT("reward.xp_alz", xp, 0));
+        }
+
         for (var i = 0; i < loot.Items.Count; i++)
         {
             var angle = i * 2.4f;
@@ -524,6 +537,20 @@ public sealed partial class GameWorld
             .GroupBy(e => e.Player.PartyId != 0 ? e.Player.PartyId : -e.Player.Id)
             .MaxBy(g => g.Sum(e => (long)e.Damage))!;
         return best.MaxBy(e => e.Damage).Player;
+    }
+
+    /// <summary>Parte do dano total que dá direito ao XP de quem ajudou a matar sem estar no grupo vencedor.</summary>
+    public const double HelperDamageShare = 0.15;
+
+    /// <summary>Jogadores online que causaram pelo menos <see cref="HelperDamageShare"/> do dano no monstro.</summary>
+    private List<ServerPlayer> Helpers(ServerMonster monster)
+    {
+        var total = monster.DamageBy.Values.Sum(d => (long)d);
+        if (total <= 0) return new List<ServerPlayer>();
+        return monster.DamageBy
+            .Where(kv => kv.Value >= total * HelperDamageShare && _players.ContainsKey(kv.Key))
+            .Select(kv => _players[kv.Key])
+            .ToList();
     }
 
     private void RespawnMonster(ServerMonster monster, double now)

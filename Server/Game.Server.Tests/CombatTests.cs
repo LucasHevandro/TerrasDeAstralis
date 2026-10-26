@@ -164,6 +164,31 @@ public class CombatTests
     }
 
     [Fact]
+    public void Quem_ajudou_a_matar_sem_grupo_tambem_ganha_xp_mas_nao_o_alz()
+    {
+        var (world, outbox, ana, monster) = Setup(Dummy(hp: 100_000));
+        var bia = world.AddPlayer("Bia", 0);
+        bia.Movement.Teleport(0.5f, 0, 0);
+        var caio = world.AddPlayer("Caio", 0);
+        caio.Movement.Teleport(-0.5f, 0, 0);
+
+        world.Handle(ana.Id, new UseSkill { Slot = 0, TargetId = monster.Id, ClientTime = 1 }, now: 1);
+        world.Handle(bia.Id, new UseSkill { Slot = 0, TargetId = monster.Id, ClientTime = 1 }, now: 1);
+        monster.DamageBy[caio.Id] = 1; // encostou de leve: bem menos de 15% do dano
+        monster.Hp.Add(-(monster.Hp.Current - 1));
+        world.Handle(ana.Id, new UseSkill { Slot = 0, TargetId = monster.Id, ClientTime = 2 }, now: 2);
+        world.Tick(2.1);
+
+        Assert.True(monster.IsDead);
+        Assert.Equal(50, outbox.To<PlayerStats>(ana.Id).Last().Xp);
+        Assert.Equal(50, outbox.To<PlayerStats>(bia.Id).Last().Xp); // ajudou: XP inteiro
+        Assert.Equal(0, bia.Alz); // o Alz e o drop ficam com quem matou
+        Assert.True(ana.Alz > 0);
+        Assert.Equal(1, bia.Session.Kills);
+        Assert.Equal(0, caio.Session.Kills);
+    }
+
+    [Fact]
     public void Elite_tem_quatro_vezes_a_vida_e_paga_mais()
     {
         var (world, outbox, player, monster) = Setup(Dummy(hp: 100), random: 0.0, eliteChance: 1);

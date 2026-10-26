@@ -15,7 +15,7 @@ namespace Game.Server.World;
 public sealed class ServerPlayer
 {
     /// <summary>Folga de timing do combo no servidor, além da compensação de latência.</summary>
-    public const double ComboGraceSeconds = 0.08;
+    public const double ComboGraceSeconds = ComboConfig.OnlineGraceSeconds;
 
     /// <summary>Intervalo mínimo entre poções.</summary>
     public const double PotionCooldownSeconds = 1.0;
