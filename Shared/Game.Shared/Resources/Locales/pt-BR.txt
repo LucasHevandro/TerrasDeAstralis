@@ -962,6 +962,7 @@ char.free_points = {0} pontos de atributo livres ({1} para distribuir)
 options.language = Idioma
 options.language_label = Idioma do jogo
 options.client_metrics = Enviar dados do tutorial, FPS e erros (ajuda a melhorar o jogo)
+options.auto_attack = Ataque automático fora do combo (skills da barra em ordem)
 options.defaults = Restaurar padrão
 options.hint = Esc abre e fecha · as opções ficam salvas
 
