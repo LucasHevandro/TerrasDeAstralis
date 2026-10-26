@@ -282,11 +282,23 @@ public sealed partial class GameWorld
         player.Hp.Add(player.Hp.Max);
         player.Mp.Add(player.Mp.Max);
         var dungeon = ArenaRespawnPoint(player) ?? DungeonRespawnPoint(player);
-        var (spawnX, spawnZ) = dungeon ?? SpawnPointFor(player.Id);
+        // Mundo aberto: a fogueira mais perto de onde morreu (a vila é a primeira delas).
+        var camp = dungeon == null ? WorldContent.NearestRespawn(player.X, player.Z) : null;
+        var village = camp == WorldContent.RespawnPoints[0];
+        var (spawnX, spawnZ) = dungeon ?? (village ? SpawnPointFor(player.Id) : AroundCamp(camp!, player.Id));
         player.Movement.Teleport(spawnX, spawnZ, now);
         player.StatsDirty = true;
         _outbox.Send(player.Id, new PositionCorrection { X = player.X, Z = player.Z });
-        Notify(player, player.ArenaId != 0 ? LT("respawn.arena_base") : dungeon != null ? LT("respawn.crypt") : LT("respawn.village"));
+        Notify(player, player.ArenaId != 0 ? LT("respawn.arena_base") : dungeon != null ? LT("respawn.crypt")
+            : village ? LT("respawn.village") : LT("respawn.camp", camp!.Name));
+    }
+
+    /// <summary>Um lugar em volta da fogueira (fora do fogo), espalhando quem renasce junto.</summary>
+    private static (float X, float Z) AroundCamp(RespawnPoint camp, int playerId)
+    {
+        var angle = playerId * 2.39996f;
+        var radius = 2.5f + playerId % 3 * 0.75f;
+        return (camp.X + MathF.Cos(angle) * radius, camp.Z + MathF.Sin(angle) * radius);
     }
 
     private void DamageMonsterToPlayer(ServerMonster monster, ServerPlayer player, int baseDamage, byte source, double now)

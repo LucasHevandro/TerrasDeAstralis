@@ -12,7 +12,8 @@ namespace Game.Server.World;
 /// <summary>Ajustes da dungeon para testes (bots de nível 1): vida e dano dos monstros e nível mínimo.</summary>
 public sealed record DungeonTuning(float HpScale = 1f, float DamageScale = 1f, int? MinLevel = null)
 {
-    public static readonly DungeonTuning Normal = new();
+    /// <summary>Vida dos monstros a 75%: uma dupla termina dentro do tempo (antes só grupos de 3 ou 4).</summary>
+    public static readonly DungeonTuning Normal = new(HpScale: 0.75f);
 
     /// <summary>Para bots convidados de nível 1 conseguirem terminar (servidor com --dungeon-test).</summary>
     public static readonly DungeonTuning Test = new(0.012f, 0.08f, 1);

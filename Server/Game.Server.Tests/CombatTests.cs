@@ -322,6 +322,26 @@ public class CombatTests
     }
 
     [Fact]
+    public void Quem_morre_nas_ruinas_renasce_na_fogueira_mais_perto()
+    {
+        // Monstro forte perto da Erudita Veska, nas Ruínas, e o jogador ao lado dele.
+        var spawn = new SpawnDefinition { Data = Dummy(aggressive: true, attack: 999_999), CenterX = -30, CenterZ = 109.5f, Count = 1 };
+        var outbox = new FakeOutbox();
+        var world = new GameWorld(outbox, new[] { spawn }, new FixedRandom(0.5));
+        var player = world.AddPlayer("Ana", 0);
+        player.Movement.Teleport(-30, 108, 0);
+        var camp = WorldContent.RespawnPoints.Single(p => p.Id == "acampamento_ruinas");
+
+        for (var t = 0.05; t <= 0.7; t += 0.05) world.Tick(t);
+        Assert.True(player.IsDead);
+        world.Tick(0.7 + PlayerRules.RespawnSeconds);
+
+        Assert.False(player.IsDead);
+        Assert.InRange(MathF.Sqrt((player.X - camp.X) * (player.X - camp.X) + (player.Z - camp.Z) * (player.Z - camp.Z)), 2f, 4.5f);
+        Assert.Contains(outbox.Notices(player.Id), n => n.Contains(camp.Name));
+    }
+
+    [Fact]
     public void So_ve_o_que_esta_perto()
     {
         var near = new SpawnDefinition { Data = Dummy(), CenterX = 0, CenterZ = 30, Count = 1 };
