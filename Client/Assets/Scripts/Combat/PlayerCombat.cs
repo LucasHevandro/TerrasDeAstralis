@@ -551,7 +551,7 @@ namespace Game.Client.Combat
             if (_hitBuffer.Count > 0) HitsLanded++;
             foreach (var target in _hitBuffer)
             {
-                var hit = RollDamage(skill.BaseDamage, multiplier, target);
+                var hit = RollDamage(skill.BaseDamage, multiplier, target, skill.PowerScale);
                 var dealt = target.ApplyDamage(hit.Amount, hit.Critical);
                 var color = DamageColor(grade, hit.Critical);
                 DamageNumbers.Spawn(target.HeadPosition, hit.Critical ? $"{dealt}!" : dealt.ToString(),
@@ -572,9 +572,9 @@ namespace Game.Client.Combat
             return Color.white;
         }
 
-        private DamageResult RollDamage(int skillBaseDamage, double multiplier, Targetable target) =>
+        private DamageResult RollDamage(int skillBaseDamage, double multiplier, Targetable target, float powerScale = 1f) =>
             DamageFormula.Calculate(
-                new DamageInput(skillBaseDamage, AttackPower, multiplier, critChance, critMultiplier, target.Defense),
+                new DamageInput(skillBaseDamage, Mathf.RoundToInt(AttackPower * powerScale), multiplier, critChance, critMultiplier, target.Defense),
                 _random);
 
         private bool InRange(Targetable target, float range) => DistanceToEdge(target) <= range;
