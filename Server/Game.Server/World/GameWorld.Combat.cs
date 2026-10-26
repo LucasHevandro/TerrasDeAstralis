@@ -172,7 +172,7 @@ public sealed partial class GameWorld
         player.StatsDirty = true;
         if (!inCombo) player.CastUntil = press + skill.CastSeconds;
 
-        var power = ClassCatalog.PowerFor(skill.Kind, player.Stats);
+        var power = ClassCatalog.SkillPower(skill, player.Stats);
         var hits = 0;
         if (enemy != null)
         {
