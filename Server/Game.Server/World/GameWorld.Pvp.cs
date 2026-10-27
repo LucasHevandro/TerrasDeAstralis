@@ -120,6 +120,7 @@ public sealed partial class GameWorld
         if (duel != null) amount = Math.Min(amount, Math.Max(0, victim.Hp.Current - 1));
         var dealt = -victim.Hp.Add(-amount);
         victim.StatsDirty = true;
+        attacker.LastCombatAt = victim.LastCombatAt = now;
         SendNearby(victim.X, victim.Z, new CombatEvent
         {
             AttackerId = attacker.Id, TargetId = victim.Id, Source = source, Damage = dealt, Critical = hit.Critical, Grade = grade,

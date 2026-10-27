@@ -322,6 +322,69 @@ public class ProgressionWorldTests
     }
 
     [Fact]
+    public void Pocao_de_mana_tem_recarga_propria()
+    {
+        var (world, outbox, player) = Setup();
+        player.Bag.TryAdd("pocao_mp_p", 2, NewUid);
+        player.Hp.Add(-player.Hp.Max + 10);
+        player.Mp.Add(-player.Mp.Current);
+        ItemCommand Use(string id) => new()
+        {
+            Action = ItemActionKind.Use, From = ItemContainerKind.Bag,
+            FromSlot = (ushort)player.Bag.Items().First(i => i.Item.ItemId == id).Slot,
+        };
+
+        world.Handle(player.Id, Use("pocao_mp_p"), 1);
+        world.Handle(player.Id, Use("pocao_hp_p"), 1.1); // a de vida não espera a de mana
+        world.Handle(player.Id, Use("pocao_mp_p"), 1.2); // a de mana, sim
+
+        Assert.Equal(Math.Min(player.Mp.Max, ItemCatalog.Get("pocao_mp_p").HealMp), player.Mp.Current);
+        Assert.Equal(1, player.Bag.Count("pocao_mp_p"));
+        Assert.Equal(4, player.Bag.Count("pocao_hp_p"));
+        Assert.Contains(outbox.Notices(player.Id), n => n.StartsWith("Espere"));
+    }
+
+    [Fact]
+    public void Sem_mp_bebe_a_pocao_de_mana_sozinho_e_usa_a_skill()
+    {
+        var mage = AuthService.InitialCharacter(CharacterClass.Arcanist, NewUid) with { Id = 8, AccountId = 1, Name = "Bia" };
+        var (world, outbox, player) = Setup(Dummy(hp: 5000), record: mage);
+        var monster = world.Monsters.Single();
+        player.Mp.Add(-player.Mp.Current);
+
+        // Sem poção: recusa.
+        world.Handle(player.Id, new UseSkill { Slot = 0, TargetId = monster.Id }, 1);
+        Assert.Empty(outbox.To<CombatEvent>(player.Id));
+
+        player.Bag.TryAdd("pocao_mp_m", 1, NewUid);
+        player.Bag.TryAdd("pocao_mp_p", 1, NewUid);
+        world.Handle(player.Id, new UseSkill { Slot = 0, TargetId = monster.Id }, 3);
+
+        Assert.NotEmpty(outbox.To<CombatEvent>(player.Id));
+        Assert.Equal(0, player.Bag.Count("pocao_mp_p")); // a menor que cobre a falta
+        Assert.Equal(1, player.Bag.Count("pocao_mp_m"));
+        Assert.Contains(outbox.Notices(player.Id), n => n.StartsWith("Faltou MP"));
+    }
+
+    [Fact]
+    public void Vida_volta_devagar_so_fora_de_combate()
+    {
+        var (world, _, player) = Setup(Dummy(hp: 5000));
+        var monster = world.Monsters.Single();
+        player.Hp.Add(-player.Hp.Max / 2);
+        world.Handle(player.Id, new UseSkill { Slot = 0, TargetId = monster.Id }, 1);
+        player.Movement.Teleport(200, 200, 1); // longe do monstro, que desiste e volta para casa
+        var hit = player.Hp.Current;
+
+        world.Tick(5); // menos de 8 s depois do golpe: nada
+        Assert.Equal(hit, player.Hp.Current);
+
+        for (var t = 5.25; t <= 20; t += 0.25) world.Tick(t);
+        var expected = (int)(player.Hp.Max * PlayerRules.HpRegenFractionPerSecond * (20 - 1 - PlayerRules.OutOfCombatSeconds));
+        Assert.InRange(player.Hp.Current - hit, expected - player.Hp.Max / 100, expected + player.Hp.Max / 100);
+    }
+
+    [Fact]
     public void Despertar_ativa_com_barra_cheia_e_aumenta_o_dano()
     {
         var (world, outbox, player) = Setup(Dummy(hp: 100_000));

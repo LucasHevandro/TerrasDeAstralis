@@ -51,6 +51,14 @@ public sealed partial class GameWorld
             player.MpRegenCarry -= whole;
             if (player.Mp.Add(whole) != 0) player.StatsDirty = true;
         }
+
+        // Vida: bem devagar, e só fora de combate.
+        if (now - player.LastCombatAt < PlayerRules.OutOfCombatSeconds || player.Hp.Current >= player.Hp.Max) return;
+        player.HpRegenCarry += player.Hp.Max * PlayerRules.HpRegenFractionPerSecond * dt;
+        var hp = (int)player.HpRegenCarry;
+        if (hp <= 0) return;
+        player.HpRegenCarry -= hp;
+        if (player.Hp.Add(hp) != 0) player.StatsDirty = true;
     }
 
     private void HandleStartCombo(ServerPlayer player, StartCombo message, double now)
@@ -139,9 +147,15 @@ public sealed partial class GameWorld
                 Notify(player, LT("combat.out_of_range"));
                 return;
             case SkillUseCheck.NotEnoughMp:
-                Notify(player, LT("combat.no_mp", player.Mp.Current, skill.MpCost));
-                return;
+                // Com poção de mana na bolsa (e fora da recarga), bebe a menor que cobre o que falta e segue.
+                if (!DrinkManaFor(player, skill.MpCost, now))
+                {
+                    Notify(player, LT("combat.no_mp", player.Mp.Current, skill.MpCost));
+                    return;
+                }
+                break;
         }
+        player.LastCombatAt = now;
 
         var multiplier = 1.0;
         byte grade = 255;
@@ -262,6 +276,7 @@ public sealed partial class GameWorld
     {
         // Escudo: o golpe acerta, mas não tira vida (o cliente mostra 0).
         var dealt = monster.Invulnerable ? 0 : -monster.Hp.Add(-hit.Amount);
+        player.LastCombatAt = now;
         monster.DamageBy[player.Id] = monster.DamageBy.GetValueOrDefault(player.Id) + dealt;
         monster.AggroPlayerId = player.Id;
         if (monster.Data.Behavior == MonsterBehavior.Pack && !monster.Brain.Provoked) CallPack(monster, player);
@@ -313,6 +328,7 @@ public sealed partial class GameWorld
             new DamageInput(baseDamage, monster.Data.AttackPower, 1.0, 0.05, 1.5, player.Stats.Defense), _random);
         var dealt = -player.Hp.Add(-(monster.IsElite ? EliteRules.Damage(hit.Amount) : hit.Amount));
         player.StatsDirty = true;
+        player.LastCombatAt = now;
         SendNearby(player.X, player.Z, new CombatEvent
         {
             AttackerId = monster.Id, TargetId = player.Id, Source = source, Damage = dealt, Critical = hit.Critical,

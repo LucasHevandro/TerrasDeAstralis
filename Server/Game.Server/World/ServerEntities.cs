@@ -17,8 +17,8 @@ public sealed class ServerPlayer
     /// <summary>Folga de timing do combo no servidor, além da compensação de latência.</summary>
     public const double ComboGraceSeconds = ComboConfig.OnlineGraceSeconds;
 
-    /// <summary>Intervalo mínimo entre poções.</summary>
-    public const double PotionCooldownSeconds = 1.0;
+    /// <summary>Intervalo mínimo entre poções do mesmo tipo.</summary>
+    public const double PotionCooldownSeconds = PlayerRules.PotionCooldownSeconds;
 
     public int Id { get; init; }
     public string Name { get; init; } = "";
@@ -102,6 +102,13 @@ public sealed class ServerPlayer
     public double DodgeUntil { get; set; }
     public double NextDodgeAt { get; set; }
     public double NextPotionAt { get; set; }
+
+    /// <summary>Recarga da poção de mana (separada da de vida: tomar MP não trava a vida numa emergência).</summary>
+    public double NextManaPotionAt { get; set; }
+
+    /// <summary>Última vez que bateu ou apanhou: a vida só volta sozinha depois de um tempo fora de combate.</summary>
+    public double LastCombatAt { get; set; } = double.NegativeInfinity;
+    public float HpRegenCarry { get; set; }
 
     /// <summary>Conjurando uma skill até este instante (fora do combo): outra skill pedida antes espera na fila.</summary>
     public double CastUntil { get; set; }

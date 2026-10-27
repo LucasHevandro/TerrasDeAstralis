@@ -119,16 +119,55 @@ public sealed partial class GameWorld
         var item = player.Bag[c.FromSlot];
         if (item == null) return LT("equip.empty_slot");
         var definition = ItemCatalog.Get(item.ItemId);
-        if (definition.Kind != ItemKind.Consumable || definition.HealHp <= 0) return LT("item.not_usable");
+        if (!definition.IsPotion) return LT("item.not_usable");
         if (player.IsDead) return LT("player.you_are_dead");
-        if (now < player.NextPotionAt) return LT("item.potion_wait");
-        if (player.Hp.Current >= player.Hp.Max) return LT("item.hp_full");
+        var mana = definition.HealMp > 0;
+        if (now < (mana ? player.NextManaPotionAt : player.NextPotionAt)) return LT("item.potion_wait");
+        if (mana ? player.Mp.Current >= player.Mp.Max : player.Hp.Current >= player.Hp.Max)
+            return LT(mana ? "item.mp_full" : "item.hp_full");
 
-        player.NextPotionAt = now + ServerPlayer.PotionCooldownSeconds;
-        player.Hp.Add(definition.HealHp);
-        if (--item.Quantity == 0) player.Bag.Take(c.FromSlot);
-        player.StatsDirty = true;
+        Drink(player, c.FromSlot, item, definition, now);
         return null;
+    }
+
+    private static void Drink(ServerPlayer player, int slot, ItemInstance item, ItemDefinition definition, double now)
+    {
+        if (definition.HealMp > 0)
+        {
+            player.NextManaPotionAt = now + ServerPlayer.PotionCooldownSeconds;
+            player.Mp.Add(definition.HealMp);
+        }
+        else
+        {
+            player.NextPotionAt = now + ServerPlayer.PotionCooldownSeconds;
+            player.Hp.Add(definition.HealHp);
+        }
+        if (--item.Quantity == 0) player.Bag.Take(slot);
+        player.StatsDirty = true;
+    }
+
+    /// <summary>
+    /// Faltou MP para a skill: bebe a menor poção de mana da bolsa que cobre o que falta (ou a maior que houver, se
+    /// nenhuma cobre). Falso se não há poção, se ela está em recarga ou se nem bebendo dá para pagar a skill.
+    /// </summary>
+    private bool DrinkManaFor(ServerPlayer player, int cost, double now)
+    {
+        if (now < player.NextManaPotionAt) return false;
+        var missing = cost - player.Mp.Current;
+        var potions = Enumerable.Range(0, player.Bag.Size)
+            .Select(slot => (Slot: slot, Item: player.Bag[slot]))
+            .Where(p => p.Item != null && ItemCatalog.Find(p.Item.ItemId) is { HealMp: > 0 })
+            .Select(p => (p.Slot, Item: p.Item!, Definition: ItemCatalog.Get(p.Item!.ItemId)))
+            .ToList();
+        if (potions.Count == 0) return false;
+        var covering = potions.Where(p => p.Definition.HealMp >= missing).ToList();
+        var chosen = covering.Count > 0
+            ? covering.OrderBy(p => p.Definition.HealMp).First()
+            : potions.OrderByDescending(p => p.Definition.HealMp).First();
+        if (player.Mp.Current + chosen.Definition.HealMp < cost) return false;
+        Drink(player, chosen.Slot, chosen.Item, chosen.Definition, now);
+        Notify(player, LT("item.auto_mana", Loc.Ref("item." + chosen.Item.ItemId)));
+        return true;
     }
 
     private static ItemContainer? ContainerOf(ServerPlayer player, ItemContainerKind kind) => kind switch
