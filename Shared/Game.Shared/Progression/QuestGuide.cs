@@ -54,7 +54,10 @@ namespace Game.Shared.Progression
                             ? new QuestDestination(hunt.CenterX, hunt.CenterZ, "", hunt.Data.Id)
                             : AtNpc(NpcCatalog.DungeonPortal);
                     default:
-                        var source = Spawns.FirstOrDefault(s => s.Data.Drops.Entries.Any(e => e.ItemId == objective.TargetId));
+                        // Item de missão cai de quem tem o material dele na tabela.
+                        var wanted = Items.ItemCatalog.Find(objective.TargetId) is { IsQuestItem: true } questItem
+                            ? questItem.QuestMaterialId : objective.TargetId;
+                        var source = Spawns.FirstOrDefault(s => s.Data.Drops.Entries.Any(e => e.ItemId == wanted));
                         return source != null ? new QuestDestination(source.CenterX, source.CenterZ, "", source.Data.Id) : (QuestDestination?)null;
                 }
             }

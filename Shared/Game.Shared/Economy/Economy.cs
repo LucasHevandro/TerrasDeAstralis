@@ -13,6 +13,7 @@ namespace Game.Shared.Economy
         /// <summary>Quanto o NPC paga por uma unidade (a melhoria aumenta o preço do equipamento).</summary>
         public static long SellPrice(ItemDefinition definition, int upgrade = 0)
         {
+            if (definition.IsQuestItem) return 0; // item de missão não se vende
             if (definition.Kind == ItemKind.Equipment)
                 return 120L * definition.Grade * definition.Grade * (4 + Math.Max(0, upgrade)) / 4;
             if (definition.UpgradeCoreGrade > 0) return 250L * definition.UpgradeCoreGrade;
@@ -224,6 +225,7 @@ namespace Game.Shared.Economy
                 var item = bag[entry.Slot];
                 if (item == null || item.Uid != entry.Uid) return new LocalText("trade.item_gone");
                 if (entry.Quantity <= 0 || entry.Quantity > item.Quantity) return new LocalText("trade.bad_quantity");
+                if (ItemCatalog.Find(item.ItemId) is { IsQuestItem: true }) return new LocalText("item.quest_bound");
             }
             return null;
         }

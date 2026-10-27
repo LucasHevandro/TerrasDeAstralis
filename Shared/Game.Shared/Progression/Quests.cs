@@ -180,7 +180,7 @@ namespace Game.Shared.Progression
                 Objectives =
                 {
                     new QuestObjective(QuestObjectiveKind.Kill, "lobo_cinzento", 12),
-                    new QuestObjective(QuestObjectiveKind.Collect, "pele_lobo", 6),
+                    new QuestObjective(QuestObjectiveKind.Collect, "missao_pele_lobo", 6),
                 },
                 RewardXp = 4000, RewardAlz = 4000, RewardItems = { (ItemCatalog.CoreLow, 3), ("pedra_vigor", 1) },
             },
@@ -199,7 +199,7 @@ namespace Game.Shared.Progression
                 Id = "veneno_raro", MinLevel = 15, PreviousQuestId = ClassCatalog.RankTwoQuestId,
                 Objectives =
                 {
-                    new QuestObjective(QuestObjectiveKind.Collect, "veneno", 8),
+                    new QuestObjective(QuestObjectiveKind.Collect, "missao_veneno", 8),
                     new QuestObjective(QuestObjectiveKind.Talk, NpcCatalog.Smith),
                 },
                 RewardXp = 18000, RewardAlz = 20000, RewardItems = { (ItemCatalog.CoreMedium, 3), ("pedra_furia", 1) },
@@ -210,7 +210,7 @@ namespace Game.Shared.Progression
                 Objectives =
                 {
                     new QuestObjective(QuestObjectiveKind.Kill, "golem_de_pedra", 20),
-                    new QuestObjective(QuestObjectiveKind.Collect, "fragmento_pedra", 10),
+                    new QuestObjective(QuestObjectiveKind.Collect, "missao_fragmento_pedra", 10),
                 },
                 RewardXp = 28000, RewardAlz = 45000, RewardItems = { (ItemCatalog.CoreHigh, 2) },
             },
@@ -220,7 +220,7 @@ namespace Game.Shared.Progression
                 Objectives =
                 {
                     new QuestObjective(QuestObjectiveKind.Kill, "espectro", 25),
-                    new QuestObjective(QuestObjectiveKind.Collect, "essencia", 10),
+                    new QuestObjective(QuestObjectiveKind.Collect, "missao_essencia", 10),
                 },
                 RewardXp = 40000, RewardAlz = 40000, RewardItems = { (ItemCatalog.CoreHigh, 3), ("pedra_precisao", 1) },
             },
@@ -289,7 +289,7 @@ namespace Game.Shared.Progression
             new QuestDefinition
             {
                 Id = "pelos_para_o_inverno", GiverNpcId = NpcCatalog.Hunter, MinLevel = 4, PreviousQuestId = "coelhos_na_horta",
-                Objectives = { new QuestObjective(QuestObjectiveKind.Collect, "pelo_macio", 8) },
+                Objectives = { new QuestObjective(QuestObjectiveKind.Collect, "missao_pelo_macio", 8) },
                 RewardXp = 2300, RewardAlz = 300, RewardItems = { ("pocao_hp_p", 4) },
             },
             new QuestDefinition
@@ -301,13 +301,13 @@ namespace Game.Shared.Progression
             new QuestDefinition
             {
                 Id = "presas_afiadas", GiverNpcId = NpcCatalog.Hunter, MinLevel = 7, PreviousQuestId = "uivos_na_noite",
-                Objectives = { new QuestObjective(QuestObjectiveKind.Collect, "presa_lobo", 2) },
+                Objectives = { new QuestObjective(QuestObjectiveKind.Collect, "missao_presa_lobo", 2) },
                 RewardXp = 4900, RewardAlz = 600, RewardItems = { ("nucleo_baixo", 1) },
             },
             new QuestDefinition
             {
                 Id = "matilha_alfa", GiverNpcId = NpcCatalog.Hunter, MinLevel = 8, PreviousQuestId = "presas_afiadas",
-                Objectives = { new QuestObjective(QuestObjectiveKind.Kill, "lobo_cinzento", 15), new QuestObjective(QuestObjectiveKind.Collect, "pele_lobo", 5) },
+                Objectives = { new QuestObjective(QuestObjectiveKind.Kill, "lobo_cinzento", 15), new QuestObjective(QuestObjectiveKind.Collect, "missao_pele_lobo", 5) },
                 RewardXp = 8000, RewardAlz = 1000, RewardItems = { ("pocao_hp_m", 3), ("nucleo_baixo", 1) },
             },
             new QuestDefinition
@@ -325,7 +325,7 @@ namespace Game.Shared.Progression
             new QuestDefinition
             {
                 Id = "couro_resistente", GiverNpcId = NpcCatalog.Scout, MinLevel = 12, PreviousQuestId = "javalis_famintos",
-                Objectives = { new QuestObjective(QuestObjectiveKind.Collect, "couro_javali", 10) },
+                Objectives = { new QuestObjective(QuestObjectiveKind.Collect, "missao_couro_javali", 10) },
                 RewardXp = 12700, RewardAlz = 1500, RewardItems = { ("nucleo_baixo", 2) },
             },
             new QuestDefinition
@@ -337,7 +337,7 @@ namespace Game.Shared.Progression
             new QuestDefinition
             {
                 Id = "seda_fina", GiverNpcId = NpcCatalog.Scout, MinLevel = 14, PreviousQuestId = "teias_na_trilha",
-                Objectives = { new QuestObjective(QuestObjectiveKind.Collect, "seda", 8) },
+                Objectives = { new QuestObjective(QuestObjectiveKind.Collect, "missao_seda", 8) },
                 RewardXp = 16100, RewardAlz = 1900, RewardItems = { ("nucleo_medio", 1) },
             },
             new QuestDefinition
@@ -371,14 +371,14 @@ namespace Game.Shared.Progression
                 Objectives =
                 {
                     new QuestObjective(QuestObjectiveKind.Kill, "golem_de_pedra", 6),
-                    new QuestObjective(QuestObjectiveKind.Collect, "fragmento_pedra", 6),
+                    new QuestObjective(QuestObjectiveKind.Collect, "missao_fragmento_pedra", 6),
                 },
                 RewardXp = 33000, RewardAlz = 4000, RewardItems = { ("pocao_hp_m", 3) },
             },
             new QuestDefinition
             {
                 Id = "nucleo_de_pedra", GiverNpcId = NpcCatalog.Scholar, MinLevel = 23, PreviousQuestId = "golens_despertos",
-                Objectives = { new QuestObjective(QuestObjectiveKind.Collect, "fragmento_pedra", 12) },
+                Objectives = { new QuestObjective(QuestObjectiveKind.Collect, "missao_fragmento_pedra", 12) },
                 RewardXp = 35200, RewardAlz = 4200, RewardItems = { ("nucleo_alto", 1) },
             },
             new QuestDefinition
@@ -390,7 +390,7 @@ namespace Game.Shared.Progression
             new QuestDefinition
             {
                 Id = "essencia_perdida", GiverNpcId = NpcCatalog.Scholar, MinLevel = 26, PreviousQuestId = "lamentos",
-                Objectives = { new QuestObjective(QuestObjectiveKind.Collect, "essencia", 6) },
+                Objectives = { new QuestObjective(QuestObjectiveKind.Collect, "missao_essencia", 6) },
                 RewardXp = 42700, RewardAlz = 5100, RewardItems = { ("nucleo_alto", 1) },
             },
             new QuestDefinition
@@ -402,13 +402,13 @@ namespace Game.Shared.Progression
             new QuestDefinition
             {
                 Id = "honra_perdida", GiverNpcId = NpcCatalog.Scholar, MinLevel = 28, PreviousQuestId = "cavaleiros_caidos",
-                Objectives = { new QuestObjective(QuestObjectiveKind.Kill, "cavaleiro_caido", 20), new QuestObjective(QuestObjectiveKind.Collect, "essencia", 5) },
+                Objectives = { new QuestObjective(QuestObjectiveKind.Kill, "cavaleiro_caido", 20), new QuestObjective(QuestObjectiveKind.Collect, "missao_essencia", 5) },
                 RewardXp = 57700, RewardAlz = 6900, RewardItems = { ("nucleo_alto", 2) },
             },
             new QuestDefinition
             {
                 Id = "antidoto", GiverNpcId = NpcCatalog.Scout, MinLevel = 16, PreviousQuestId = "teias_na_trilha",
-                Objectives = { new QuestObjective(QuestObjectiveKind.Collect, "veneno", 4) },
+                Objectives = { new QuestObjective(QuestObjectiveKind.Collect, "missao_veneno", 4) },
                 RewardXp = 21900, RewardAlz = 2600, RewardItems = { ("pocao_hp_m", 5) },
             },
             new QuestDefinition

@@ -273,10 +273,14 @@ public class QuestTests
         Assert.Equal(12, log.ProgressOf("pele_e_presa")!.Counts[0]); // não passa do pedido
         Assert.False(QuestLog.IsReady(log.ProgressOf("pele_e_presa")!, bag));
 
+        // A missão pede a pele de missão, não a de vender.
         bag.TryAdd("pele_lobo", 8, NewUid);
+        Assert.False(QuestLog.IsReady(log.ProgressOf("pele_e_presa")!, bag));
+        bag.TryAdd("missao_pele_lobo", 8, NewUid);
         Assert.True(QuestLog.IsReady(log.ProgressOf("pele_e_presa")!, bag));
         Assert.Null(log.TurnIn("pele_e_presa", bag, NewUid, out _));
-        Assert.Equal(2, bag.Count("pele_lobo"));
+        Assert.Equal(2, bag.Count("missao_pele_lobo"));
+        Assert.Equal(8, bag.Count("pele_lobo"));
         Assert.Equal(3, bag.Count(ItemCatalog.CoreLow));
         Assert.Equal(1, bag.Count("pedra_vigor"));
     }

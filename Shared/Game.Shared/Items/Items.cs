@@ -11,6 +11,9 @@ namespace Game.Shared.Items
         Material = 0,
         Consumable = 1,
         Equipment = 2,
+
+        /// <summary>Item de missão: só cai para quem tem a missão; não vende, não troca e some quando ela acaba.</summary>
+        Quest = 3,
     }
 
     public enum EquipSlot
@@ -118,8 +121,14 @@ namespace Game.Shared.Items
         /// <summary>Poção (de vida ou de mana): usada pelo botão direito, pela barra de atalhos ou sozinha (MP).</summary>
         public bool IsPotion => Kind == ItemKind.Consumable && (HealHp > 0 || HealMp > 0);
 
+        /// <summary>Item de missão: o material de que ele é a versão de missão (cai dos mesmos monstros).</summary>
+        public string QuestMaterialId = "";
+
+        public bool IsQuestItem => Kind == ItemKind.Quest;
+
         /// <summary>Descrição no idioma do jogador (vazia se o item não tiver).</summary>
         public string Description =>
+            IsQuestItem ? Loc.T("item.missao.desc") :
             UpgradeCoreGrade > 0 ? Loc.T("item.desc.core", Loc.Ref("grade." + UpgradeCoreGrade)) :
             IsOptionStone ? Loc.T("item.desc.stone", OptionStats.Describe()) :
             Loc.Optional(Loc.Key("item.", Id, ".desc"));
@@ -249,7 +258,7 @@ namespace Game.Shared.Items
                 MaxStack = 50, HealMp = 900,
             });
 
-            // ===== Materiais dos monstros (vendáveis e para missões) =====
+            // ===== Materiais dos monstros (vendáveis) =====
             foreach (var (id, rarity) in new[]
                      {
                          ("pelo_macio", ItemRarity.Common), ("pele_lobo", ItemRarity.Common),
@@ -261,6 +270,17 @@ namespace Game.Shared.Items
                      })
             {
                 list.Add(new ItemDefinition { Id = id, Kind = ItemKind.Material, Rarity = rarity, MaxStack = 99 });
+            }
+
+            // ===== Itens de missão: a versão "de missão" dos materiais que as missões pedem (QuestItems) =====
+            foreach (var material in QuestItems.Materials)
+            {
+                var source = list.Find(i => i.Id == material);
+                list.Add(new ItemDefinition
+                {
+                    Id = QuestItems.For(material), Kind = ItemKind.Quest, Rarity = source.Rarity, MaxStack = 99,
+                    QuestMaterialId = material,
+                });
             }
 
             // ===== Chaves de dungeon =====
