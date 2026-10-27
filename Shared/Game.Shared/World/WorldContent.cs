@@ -367,6 +367,29 @@ namespace Game.Shared.World
     }
 
     /// <summary>Regras do personagem que o cliente offline e o servidor precisam concordar.</summary>
+    /// <summary>
+    /// Fogueira de descanso no centro da praça: quem senta perto dela recupera vida, MP e SP bem mais rápido. Andar,
+    /// atacar ou apanhar levanta. Fora do raio, sentar não faz nada.
+    /// </summary>
+    public static class RestRules
+    {
+        public const float FireX = 0f;
+        public const float FireZ = 0f;
+
+        /// <summary>Até onde, a partir do centro da fogueira, sentar regenera.</summary>
+        public const float Radius = 4.5f;
+
+        /// <summary>Raio do próprio fogo (ninguém fica dentro dele, nem nasce nele).</summary>
+        public const float FireRadius = 1.2f;
+
+        public const float HpFractionPerSecond = 0.03f;
+        public const float MpFractionPerSecond = 0.03f;
+        public const float SpPerSecond = 20f;
+
+        public static bool InRange(float x, float z) =>
+            (x - FireX) * (x - FireX) + (z - FireZ) * (z - FireZ) <= Radius * Radius;
+    }
+
     public static class PlayerRules
     {
         public const int MaxSp = 2000;

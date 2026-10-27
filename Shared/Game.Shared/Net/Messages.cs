@@ -35,6 +35,7 @@ namespace Game.Shared.Net
         SetHotbar = 26,
         AppearanceCommand = 27,
         MarketCommand = 28,
+        SetResting = 29,
 
         // Servidor → cliente
         Welcome = 100,
@@ -402,12 +403,24 @@ namespace Game.Shared.Net
         public float Yaw;
         public int Hp;
 
-        /// <summary>Flags: bit 0 = morto, bit 1 = preparando golpe, bit 2 = chefe na fase 2.</summary>
+        /// <summary>Flags: bit 0 = morto, bit 1 = preparando golpe, bit 2 = chefe na fase 2, bit 3 = sentado na fogueira.</summary>
         public byte Flags;
 
         public const byte FlagDead = 1;
         public const byte FlagWindUp = 2;
         public const byte FlagEnraged = 4;
+        public const byte FlagResting = 8;
+    }
+
+    /// <summary>Sentar ou levantar (a fogueira da vila regenera quem está sentado perto dela).</summary>
+    public sealed class SetResting : INetMessage
+    {
+        public MessageType Type => MessageType.SetResting;
+        public bool Resting;
+
+        public void Write(PacketWriter w) => w.WriteBool(Resting);
+
+        public static SetResting Read(PacketReader r) => new SetResting { Resting = r.ReadBool() };
     }
 
     /// <summary>Estado das entidades perto do jogador, enviado a cada tick.</summary>
@@ -829,6 +842,7 @@ namespace Game.Shared.Net
                 MessageType.MarketCommand => MarketCommand.Read(reader),
                 MessageType.MarketState => MarketState.Read(reader),
                 MessageType.FriendInvite => FriendInvite.Read(reader),
+                MessageType.SetResting => SetResting.Read(reader),
                 _ => throw new ProtocolException($"Tipo de mensagem desconhecido: {(ushort)type}."),
             };
             // Hello de outra versão pode ter mais campos: lê só a versão para o servidor poder recusar com motivo.
