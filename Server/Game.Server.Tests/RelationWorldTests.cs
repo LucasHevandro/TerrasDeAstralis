@@ -48,9 +48,15 @@ public class RelationWorldTests
         var ana = world.AddPlayer("", 0, null, Record(1, "Ana"));
         var bia = world.AddPlayer("", 0, null, Record(2, "Bia"));
 
+        // Convidar não basta: a amizade só existe depois que a Bia aceita, e aí vale para as duas.
         Social(world, ana, RelationActionKind.AddFriend, "bia");
+        Assert.Contains("Convite de amizade enviado a Bia", outbox.System(ana.Id));
+        Assert.Equal("Ana", Assert.Single(outbox.To<FriendInvite>(bia.Id)).InviterName);
+        Assert.Empty(ana.Relations);
+        Social(world, bia, RelationActionKind.AcceptFriend, "Ana");
         Assert.Contains("Bia agora é seu amigo", outbox.System(ana.Id));
-        Assert.Contains("Ana adicionou você como amigo", outbox.System(bia.Id));
+        Assert.Contains("Ana agora é seu amigo", outbox.System(bia.Id));
+        Assert.True(bia.HasRelation(RelationKind.Friend, ana.CharacterId));
         world.Tick(1);
         var lists = outbox.To<SocialLists>(ana.Id).Last();
         Assert.Equal(("Bia", true, 1), (lists.Friends[0].Name, lists.Friends[0].Online, lists.Friends[0].Level));
@@ -60,7 +66,7 @@ public class RelationWorldTests
         world.Tick(2);
         Assert.False(outbox.To<SocialLists>(ana.Id).Last().Friends[0].Online);
 
-        world.AddPlayer("", 3, null, Record(2, "Bia"));
+        var bia2 = world.AddPlayer("", 3, null, Record(2, "Bia") with { Relations = bia.Relations.ToList() });
         Assert.Contains("Bia entrou no jogo", outbox.System(ana.Id));
 
         Social(world, ana, RelationActionKind.AddFriend, "Bia");
@@ -68,8 +74,36 @@ public class RelationWorldTests
         Social(world, ana, RelationActionKind.AddFriend, "Ninguem");
         Assert.Contains("Ninguem precisa estar online para ser adicionado", outbox.System(ana.Id));
 
+        // Remover tira dos dois lados.
         Social(world, ana, RelationActionKind.RemoveFriend, "BIA");
         Assert.Empty(ana.Relations);
+        Assert.DoesNotContain(bia2.Relations, r => r.Kind == RelationKind.Friend);
+        Assert.Contains("Ana tirou você da lista de amigos", outbox.System(bia2.Id));
+    }
+
+    [Fact]
+    public void Convite_de_amizade_recusado_ou_vencido_nao_vale()
+    {
+        var (world, outbox) = NewWorld();
+        var ana = world.AddPlayer("", 0, null, Record(1, "Ana"));
+        var bia = world.AddPlayer("", 0, null, Record(2, "Bia"));
+
+        Social(world, ana, RelationActionKind.AddFriend, "Bia", now: 1);
+        Social(world, bia, RelationActionKind.DeclineFriend, "Ana", now: 2);
+        Assert.Contains("Bia recusou o convite de amizade", outbox.System(ana.Id));
+        Social(world, bia, RelationActionKind.AcceptFriend, "Ana", now: 3);
+        Assert.Contains("O convite de amizade de Ana não vale mais", outbox.System(bia.Id));
+
+        Social(world, ana, RelationActionKind.AddFriend, "Bia", now: 10);
+        Social(world, bia, RelationActionKind.AcceptFriend, "Ana", now: 10 + RelationRules.FriendInviteSeconds + 1);
+        Assert.Empty(ana.Relations);
+        Assert.Empty(bia.Relations);
+
+        // Os dois convidando: o segundo convite já fecha a amizade.
+        Social(world, ana, RelationActionKind.AddFriend, "Bia", now: 100);
+        Social(world, bia, RelationActionKind.AddFriend, "Ana", now: 101);
+        Assert.True(ana.HasRelation(RelationKind.Friend, bia.CharacterId));
+        Assert.True(bia.HasRelation(RelationKind.Friend, ana.CharacterId));
     }
 
     [Fact]
@@ -177,10 +211,11 @@ public class RelationWorldTests
 
         var (world, _) = NewWorld();
         var pa = world.AddPlayer("", 0, null, ana);
-        world.AddPlayer("", 0, null, bia);
+        var pb = world.AddPlayer("", 0, null, bia);
         var pc = world.AddPlayer("", 0, null, caio);
         world.Handle(pc.Id, new ChatSend { Channel = ChatChannel.Map, Text = "spam spam" }, 1);
         Social(world, pa, RelationActionKind.AddFriend, "Bia");
+        Social(world, pb, RelationActionKind.AcceptFriend, "Ana");
         Social(world, pa, RelationActionKind.Block, "Caio");
         Social(world, pa, RelationActionKind.Report, "Caio", "spam no mapa", now: 2);
         var (snapshot, logs) = world.CaptureForSave(pa);
