@@ -582,6 +582,7 @@ net.already_online = Esse personagem já está no jogo.
 
 # ===== Contas: banco =====
 auth.account_exists = Essa conta já existe.
+auth.no_account = Essa conta não existe.
 auth.max_characters = A conta já tem {0} personagens.
 auth.name_taken = Esse nome já está em uso.
 auth.try_again = Tente de novo em instantes.
