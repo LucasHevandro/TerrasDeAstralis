@@ -422,9 +422,11 @@ namespace Game.Client.UI
             {
                 var rect = HotbarRect(slot, count);
                 var i = CharacterState.HotbarSkill(slot);
-                var filled = i >= 0 && i < skills.Count;
+                var item = CharacterState.HotbarItem(slot);
+                var filled = (i >= 0 && i < skills.Count) || item != null;
                 UiTheme.Slot(rect, rect.Contains(mouse));
-                if (filled)
+                if (item != null) DrawHotbarItem(rect, item);
+                else if (filled)
                 {
                     var skill = skills[i];
                     if (rect.Contains(mouse)) hovered = i;
@@ -456,6 +458,18 @@ namespace Game.Client.UI
 
             DrawCastBar();
             if (hovered >= 0) DrawSkillTooltip(skills[hovered], hovered, mouse);
+        }
+
+        /// <summary>Poção na barra: o ícone e quantas há na bolsa (escurece quando acabou).</summary>
+        private void DrawHotbarItem(Rect rect, string itemId)
+        {
+            var count = CharacterState.Bag.Count(itemId);
+            var icon = ItemIcons.Get(itemId);
+            if (icon != null) GUI.DrawTexture(new Rect(rect.x + 4, rect.y + 4, rect.width - 8, rect.height - 8), icon, ScaleMode.ScaleToFit);
+            else ShadowLabel(rect, Game.Shared.Items.ItemCatalog.Get(itemId).Name, _key.WithCenter(), Color.white, 1f);
+            if (count == 0) Box(rect, new Color(0.03f, 0.03f, 0.05f, 0.7f));
+            ShadowLabel(new Rect(rect.x, rect.yMax - 18, rect.width - 4, 16), $"<b>{count}</b>", _key.WithAlignment(TextAnchor.UpperRight),
+                count == 0 ? new Color(1f, 0.45f, 0.4f) : Color.white, 1f);
         }
 
         /// <summary>Barra de conjuração logo acima da barra de atalhos, com o nome da skill.</summary>

@@ -198,7 +198,20 @@ namespace Game.Client.Net
             if (Sheet == null || Sheet.Hotbar.Count == 0) return slot;
             if (slot < 0 || slot >= Sheet.Hotbar.Count) return -1;
             var index = Sheet.Hotbar[slot];
-            return index == Game.Shared.Progression.SkillTraining.Empty ? -1 : index;
+            return index == Game.Shared.Progression.SkillTraining.Empty || index >= Game.Shared.Progression.SkillTraining.ItemBase ? -1 : index;
+        }
+
+        /// <summary>Item (poção) na casa da barra; nulo se a casa tem skill ou está vazia.</summary>
+        public static string HotbarItem(int slot) =>
+            Sheet == null || slot < 0 || slot >= Sheet.Hotbar.Count ? null : Game.Shared.Progression.SkillTraining.ItemOf(Sheet.Hotbar[slot]);
+
+        /// <summary>Valor cru da casa (skill, item ou vazio), para rearrumar a barra.</summary>
+        public static byte HotbarValue(int slot)
+        {
+            var item = HotbarItem(slot);
+            if (item != null) return Game.Shared.Progression.SkillTraining.ItemValue(item);
+            var skill = HotbarSkill(slot);
+            return skill < 0 ? Game.Shared.Progression.SkillTraining.Empty : (byte)skill;
         }
 
         /// <summary>Arrumação nova da barra (já mostrada; o servidor confirma na próxima ficha).</summary>

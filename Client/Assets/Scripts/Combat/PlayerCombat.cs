@@ -7,6 +7,7 @@ using Game.Client.UI;
 using Game.Shared.Accounts;
 using Game.Shared.Combat;
 using Game.Shared.Core;
+using Game.Shared.Items;
 using Game.Shared.Progression;
 using Game.Shared.Text;
 using Game.Shared.World;
@@ -297,11 +298,34 @@ namespace Game.Client.Combat
         /// <summary>Tenta usar a skill do slot <paramref name="index"/> (0 a 3).</summary>
         public void RequestSkill(int index) => UseSkill(index, Time.time);
 
-        /// <summary>Usa a skill que está na casa <paramref name="slot"/> da barra de atalhos (nada se a casa está vazia).</summary>
+        /// <summary>
+        /// Usa o que está na casa <paramref name="slot"/> da barra de atalhos: a skill, ou uma poção da bolsa (nada se a
+        /// casa está vazia).
+        /// </summary>
         public void RequestHotbar(int slot)
         {
+            var item = CharacterState.HotbarItem(slot);
+            if (item != null)
+            {
+                UseBagItem(item);
+                return;
+            }
             var index = CharacterState.HotbarSkill(slot);
             if (index >= 0) RequestSkill(index);
+        }
+
+        /// <summary>Usa o item da bolsa (o mesmo que o botão direito no inventário); o servidor confere a recarga.</summary>
+        private void UseBagItem(string itemId)
+        {
+            if (!Online) return;
+            var bag = CharacterState.Bag;
+            for (var slot = 0; slot < bag.Size; slot++)
+            {
+                if (bag[slot] == null || bag[slot].ItemId != itemId) continue;
+                NetworkSession.Instance.Send(new Msg.ItemCommand { Action = Msg.ItemActionKind.Use, From = Msg.ItemContainerKind.Bag, FromSlot = (ushort)slot });
+                return;
+            }
+            Refuse(Loc.T("hotbar.no_item", ItemCatalog.Get(itemId).Name));
         }
 
         private void TryStartCombo(double now)

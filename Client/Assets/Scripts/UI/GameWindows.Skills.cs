@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Game.Client.Loot;
 using Game.Client.Net;
 using Game.Shared.Accounts;
+using Game.Shared.Items;
 using Game.Shared.Progression;
 using Game.Shared.Text;
 using UnityEngine;
@@ -21,7 +22,8 @@ namespace Game.Client.UI
 
         private bool _skillsOpen;
 
-        // Arrastar uma skill: o índice dela na classe e de que casa da barra saiu (-1 = da janela).
+        // Arrastar para a barra: o valor da casa (índice da skill na classe ou poção, ver SkillTraining.ItemBase) e de que
+        // casa saiu (-1 = da janela de skills ou do inventário).
         private int _skillDrag = -1;
         private int _skillDragSlot = -1;
         private Vector2 _skillDragStart;
@@ -112,10 +114,10 @@ namespace Game.Client.UI
             if (e.type == EventType.MouseDown && e.button == 0)
             {
                 var slot = HotbarSlotAt(e.mousePosition, count);
-                var skill = slot >= 0 ? CharacterState.HotbarSkill(slot) : -1;
-                if (skill >= 0)
+                var value = slot >= 0 ? CharacterState.HotbarValue(slot) : SkillTraining.Empty;
+                if (value != SkillTraining.Empty)
                 {
-                    BeginSkillDrag(skill, slot, e.mousePosition);
+                    BeginSkillDrag(value, slot, e.mousePosition);
                     e.Use();
                 }
             }
@@ -125,16 +127,36 @@ namespace Game.Client.UI
             if (e.type == EventType.MouseUp && e.button == 0)
             {
                 if (_skillDragging) DropSkill(HotbarSlotAt(e.mousePosition, count));
-                else if (_skillDragSlot >= 0) Player.RequestSkill(_skillDrag); // clique simples na casa: usa a skill
+                else if (_skillDragSlot >= 0) Player.RequestHotbar(_skillDragSlot); // clique simples na casa: usa
                 _skillDrag = -1;
                 _skillDragging = false;
                 e.Use();
             }
             else if (_skillDragging && e.type == EventType.Repaint)
             {
-                var texture = SkillIcons.Get(Player.Skills[_skillDrag]);
+                var item = SkillTraining.ItemOf((byte)_skillDrag);
+                var texture = item != null ? ItemIcons.Get(item) : SkillIcons.Get(Player.Skills[_skillDrag]);
                 if (texture != null) GUI.DrawTexture(new Rect(e.mousePosition.x - 26, e.mousePosition.y - 26, 52, 52), texture);
             }
+        }
+
+        /// <summary>Soltou um item do inventário: se é poção e caiu numa casa da barra, entra nela.</summary>
+        private bool DropItemOnHotbar(Vector2 point, ItemInstance item)
+        {
+            if (Player == null) return false;
+            var slot = HotbarSlotAt(point, CombatHud.HotbarCount(Player.Skills.Count));
+            var value = SkillTraining.ItemValue(item.ItemId);
+            if (slot < 0) return false;
+            if (value == SkillTraining.Empty)
+            {
+                Player.ShowNotice(Loc.T("hotbar.only_potions"));
+                return true;
+            }
+            _skillDrag = value;
+            _skillDragSlot = -1;
+            DropSkill(slot);
+            _skillDrag = -1;
+            return true;
         }
 
         private void BeginSkillDrag(int skill, int slot, Vector2 at)
@@ -156,11 +178,7 @@ namespace Game.Client.UI
         private void DropSkill(int target)
         {
             var bar = new byte[SkillTraining.HotbarSize];
-            for (var slot = 0; slot < bar.Length; slot++)
-            {
-                var skill = CharacterState.HotbarSkill(slot);
-                bar[slot] = skill < 0 ? SkillTraining.Empty : (byte)skill;
-            }
+            for (var slot = 0; slot < bar.Length; slot++) bar[slot] = CharacterState.HotbarValue(slot);
             var dragged = (byte)_skillDrag;
             if (target >= 0 && _skillDragSlot >= 0)
             {

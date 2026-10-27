@@ -479,6 +479,7 @@ namespace Game.Client.UI
             if (item == null) return;
 
             if (characterShown && DropOnCharacter(point, from, fromSlot, item)) return;
+            if (from == Msg.ItemContainerKind.Bag && DropItemOnHotbar(point, item)) return;
             if (inventoryShown)
             {
                 for (var slot = 0; slot < CharacterState.Bag.Size; slot++)
