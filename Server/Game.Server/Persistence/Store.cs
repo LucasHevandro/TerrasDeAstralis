@@ -182,6 +182,9 @@ public interface IGameStore
     /// <summary>Marca ou desmarca a conta como GM. Falso se a conta não existe.</summary>
     Task<bool> SetGmAsync(string normalizedAccount, bool isGm);
 
+    /// <summary>Troca o hash da senha (comando --set-password). Falso se a conta não existe.</summary>
+    Task<bool> SetPasswordHashAsync(string normalizedAccount, string passwordHash);
+
     Task RecordGmActionAsync(GmActionRecord action);
 
     /// <summary>Ações de GM, mais recentes primeiro.</summary>

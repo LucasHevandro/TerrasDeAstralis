@@ -114,6 +114,18 @@ public sealed class AuthService
         }
     }
 
+    /// <summary>
+    /// Troca a senha da conta sem pedir a antiga (comando --set-password, rodado por quem administra o servidor).
+    /// Nulo = trocou; senão, o motivo (senha fora das regras ou conta que não existe).
+    /// </summary>
+    public async Task<LocalText?> ResetPasswordAsync(string account, string newPassword)
+    {
+        var error = AccountRules.ValidatePassword(newPassword);
+        if (error != null) return error;
+        var hash = await HashAsync(() => _hasher.Hash(newPassword));
+        return await _store.SetPasswordHashAsync(AccountRules.NormalizeAccount(account), hash) ? null : new LocalText("auth.no_account");
+    }
+
     /// <summary>Quantas contas o IP criou na janela (e esquece as mais velhas).</summary>
     private int RecentAccounts(string ip, DateTimeOffset now)
     {

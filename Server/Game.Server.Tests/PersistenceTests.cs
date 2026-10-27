@@ -249,6 +249,7 @@ public class SaveAndLogTests
         public Task SetBanAsync(int id, DateTimeOffset? until, string reason) => _inner.SetBanAsync(id, until, reason);
         public Task SetMuteAsync(int id, DateTimeOffset? until) => _inner.SetMuteAsync(id, until);
         public Task<bool> SetGmAsync(string a, bool gm) => _inner.SetGmAsync(a, gm);
+        public Task<bool> SetPasswordHashAsync(string a, string hash) => _inner.SetPasswordHashAsync(a, hash);
         public Task RecordGmActionAsync(GmActionRecord action) => _inner.RecordGmActionAsync(action);
         public Task<IReadOnlyList<GmActionRecord>> GmActionsAsync(int max = 100) => _inner.GmActionsAsync(max);
     }

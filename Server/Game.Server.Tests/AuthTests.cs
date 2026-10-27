@@ -37,6 +37,20 @@ public class AuthServiceTests
     }
 
     [Fact]
+    public async Task Troca_de_senha_pelo_comando_vale_no_proximo_login()
+    {
+        var (auth, _, _, _) = Create();
+        await auth.RegisterAsync(Creds());
+
+        Assert.Equal("password.short", (await auth.ResetPasswordAsync("lucas", "curta"))?.Key);
+        Assert.Equal("auth.no_account", (await auth.ResetPasswordAsync("ninguem", "senhanova1"))?.Key);
+        Assert.Null(await auth.ResetPasswordAsync("LUCAS", "senhanova1"));
+
+        Assert.False((await auth.LoginAsync(Creds())).Ok);
+        Assert.True((await auth.LoginAsync(Creds(password: "senhanova1"))).Ok);
+    }
+
+    [Fact]
     public async Task Cadastro_repetido_ou_invalido_eh_recusado()
     {
         var (auth, _, _, _) = Create();

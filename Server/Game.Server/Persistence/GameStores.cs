@@ -79,6 +79,16 @@ public sealed class EfGameStore : IGameStore
         return true;
     }
 
+    public async Task<bool> SetPasswordHashAsync(string normalizedAccount, string passwordHash)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var account = await db.Accounts.FirstOrDefaultAsync(a => a.Name == normalizedAccount);
+        if (account == null) return false;
+        account.PasswordHash = passwordHash;
+        await db.SaveChangesAsync();
+        return true;
+    }
+
     public async Task RecordGmActionAsync(GmActionRecord action)
     {
         await using var db = await _factory.CreateDbContextAsync();
@@ -520,6 +530,17 @@ public sealed class InMemoryGameStore : IGameStore
             var account = _accounts.Values.FirstOrDefault(a => a.Name == normalizedAccount);
             if (account == null) return Task.FromResult(false);
             _accounts[account.Id] = account with { IsGm = isGm };
+            return Task.FromResult(true);
+        }
+    }
+
+    public Task<bool> SetPasswordHashAsync(string normalizedAccount, string passwordHash)
+    {
+        lock (_lock)
+        {
+            var account = _accounts.Values.FirstOrDefault(a => a.Name == normalizedAccount);
+            if (account == null) return Task.FromResult(false);
+            _accounts[account.Id] = account with { PasswordHash = passwordHash };
             return Task.FromResult(true);
         }
     }

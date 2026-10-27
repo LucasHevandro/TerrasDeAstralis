@@ -21,6 +21,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 //   --stats N      métricas de desempenho a cada N segundos
 //   --gm a,b       contas tratadas como GM nesta execução (testes locais; em produção use --set-gm)
 //   --set-gm conta / --unset-gm conta  marca ou desmarca a conta como GM no banco e sai
+//   --set-password conta  pede a senha nova no terminal (sem mostrar), grava e sai
 //   --max-per-ip N conexões ao mesmo tempo do mesmo IP (padrão 8; 0 = sem limite; o próprio PC não conta)
 //   --delete-account conta  apaga a conta e tudo dela (pedido do jogador, LGPD) e sai
 //   --report [dias] resumo das métricas do teste fechado (padrão: desde o início) e sai
@@ -33,6 +34,7 @@ var gmAccounts = new List<string>();
 string? setGm = null;
 var checkHealth = false;
 string? deleteAccount = null;
+string? setPassword = null;
 double? reportDays = null;
 var setGmValue = true;
 for (var i = 0; i < args.Length; i++)
@@ -82,6 +84,9 @@ for (var i = 0; i < args.Length; i++)
             break;
         case "--delete-account" when value.Length > 0:
             deleteAccount = value;
+            break;
+        case "--set-password" when value.Length > 0:
+            setPassword = value;
             break;
         case "--report":
             reportDays = double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var days) ? days : 0;
@@ -161,6 +166,21 @@ if (deleteAccount != null)
     var deleted = await store.DeleteAccountAsync(Game.Shared.Accounts.AccountRules.NormalizeAccount(deleteAccount));
     Log(deleted ? $"Conta {deleteAccount} apagada, com personagens, itens, registros e métricas." : $"Conta {deleteAccount} não encontrada.");
     return deleted ? 0 : 1;
+}
+
+if (setPassword != null)
+{
+    var first = ReadSecret($"Senha nova para {setPassword}: ");
+    var second = ReadSecret("Repita a senha: ");
+    if (first != second)
+    {
+        Log("As senhas não são iguais. Nada mudou.");
+        return 1;
+    }
+    var reset = new AuthService(store, new PasswordHasher(), new SessionTokens());
+    var refused = await reset.ResetPasswordAsync(setPassword, first);
+    Log(refused == null ? $"Senha da conta {setPassword} trocada." : $"Senha não trocada: {refused}");
+    return refused == null ? 0 : 1;
 }
 
 if (reportDays != null)
@@ -248,6 +268,27 @@ Log("Desligando...");
 host.Stop();
 Log($"Salvamentos concluídos: {saver.Saved}, falhas: {saver.Failures}.");
 return 0;
+
+// Lê uma senha do terminal sem mostrar o que é digitado (com a entrada redirecionada, lê a linha normalmente).
+static string ReadSecret(string prompt)
+{
+    Console.Write(prompt);
+    // O PowerShell põe a marca de UTF-8 (BOM) no começo do que manda por pipe.
+    if (Console.IsInputRedirected) return (Console.ReadLine() ?? "").TrimStart('﻿').TrimEnd('\r');
+    var text = new System.Text.StringBuilder();
+    while (true)
+    {
+        var key = Console.ReadKey(intercept: true);
+        if (key.Key == ConsoleKey.Enter) break;
+        if (key.Key == ConsoleKey.Backspace)
+        {
+            if (text.Length > 0) text.Length--;
+        }
+        else if (!char.IsControl(key.KeyChar)) text.Append(key.KeyChar);
+    }
+    Console.WriteLine();
+    return text.ToString();
+}
 
 // Porta ocupada (outro servidor aberto, ou outro programa): explica em vez de fechar com o erro técnico.
 async Task<bool> TryStartAsync(Func<Task> start, int port, string what)
