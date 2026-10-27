@@ -98,6 +98,7 @@ namespace Game.Shared.Monsters
         private bool _fled;
         private double _nextChargeAt;
         private double _nextBlinkAt;
+        private double _noticedAt = double.NaN;
 
         public MonsterState State { get; private set; } = MonsterState.Idle;
         public Vector2 Home { get; private set; }
@@ -177,8 +178,16 @@ namespace Game.Shared.Monsters
 
                 case MonsterState.Idle:
                 case MonsterState.Wander:
+                    if (!target.HasValue || !WantsToFight(self, target.Value)) _noticedAt = double.NaN;
+                    else if (!_provoked && _data.NoticeSeconds > 0 && (double.IsNaN(_noticedAt) || now - _noticedAt < _data.NoticeSeconds))
+                    {
+                        // Notou: vira para o alvo e espera um instante antes de atacar.
+                        if (double.IsNaN(_noticedAt)) _noticedAt = now;
+                        return new MonsterAction(MonsterActionKind.Face, target.Value);
+                    }
                     if (target.HasValue && WantsToFight(self, target.Value))
                     {
+                        _noticedAt = double.NaN;
                         State = MonsterState.Chase;
                         // Começo da luta: a investida e o sumiço só ficam prontos depois de um respiro.
                         _nextChargeAt = Math.Max(_nextChargeAt, now + MonsterBehaviors.OpeningSeconds);
@@ -312,6 +321,7 @@ namespace Game.Shared.Monsters
         {
             _fled = false;
             Enraged = false;
+            _noticedAt = double.NaN;
             _nextChargeAt = now + MonsterBehaviors.OpeningSeconds;
             _nextBlinkAt = now + MonsterBehaviors.OpeningSeconds;
         }

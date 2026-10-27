@@ -43,7 +43,11 @@ namespace Game.Shared.Monsters
         public const float FleeDistance = 7f;
         public const float FleeSpeed = 1.3f;
 
-        public const float PackCallRadius = 12f;
+        /// <summary>Lobos que entram na briga quando um apanha (era 12 m e puxava o bando inteiro).</summary>
+        public const float PackCallRadius = 8f;
+
+        /// <summary>Tempo de reação dos agressivos do mundo aberto (<see cref="MonsterData.NoticeSeconds"/>).</summary>
+        public const float WorldNoticeSeconds = 1.0f;
 
         public const float ChargeMinDistance = 4.5f;
         public const float ChargeMaxDistance = 11f;
@@ -103,6 +107,12 @@ namespace Game.Shared.Monsters
         public bool Aggressive = true;
 
         public float AggroRadius = 7f;
+
+        /// <summary>
+        /// Agressivo que vê alguém no raio só se vira para ele; ataca se a pessoa continuar perto por esse tempo. Quem
+        /// passa correndo não puxa o grupo todo. Provocado (apanhou) ataca na hora. 0 = ataca na hora (dungeon).
+        /// </summary>
+        public float NoticeSeconds;
 
         /// <summary>Distância máxima do ponto de origem antes de desistir e voltar.</summary>
         public float LeashRadius = 22f;

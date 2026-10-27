@@ -33,6 +33,31 @@ public class MonsterBrainTests
     }
 
     [Fact]
+    public void Com_tempo_de_reacao_so_vira_e_ataca_se_o_alvo_ficar_perto()
+    {
+        var data = Wolf();
+        data.NoticeSeconds = 1f;
+        var brain = Brain(data);
+
+        // Notou: vira para o alvo, sem sair do lugar.
+        Assert.Equal(MonsterActionKind.Face, brain.Tick(0, Vector2.Zero, new Vector2(5, 0)).Kind);
+        Assert.Equal(MonsterActionKind.Face, brain.Tick(0.5, Vector2.Zero, new Vector2(5, 0)).Kind);
+        Assert.NotEqual(MonsterState.Chase, brain.State);
+
+        // Saiu do raio: esquece. Voltou: conta de novo.
+        brain.Tick(0.8, Vector2.Zero, new Vector2(9, 0));
+        Assert.Equal(MonsterActionKind.Face, brain.Tick(1.2, Vector2.Zero, new Vector2(5, 0)).Kind);
+        Assert.Equal(MonsterActionKind.MoveTo, brain.Tick(2.3, Vector2.Zero, new Vector2(5, 0)).Kind);
+        Assert.Equal(MonsterState.Chase, brain.State);
+
+        // Quem bate não espera: provocado persegue na hora.
+        var hit = Brain(data);
+        hit.Provoke();
+        hit.Tick(0, Vector2.Zero, new Vector2(5, 0));
+        Assert.Equal(MonsterState.Chase, hit.State);
+    }
+
+    [Fact]
     public void Ignora_quem_esta_fora_do_raio()
     {
         var brain = Brain(Wolf());
