@@ -26,9 +26,9 @@ tem a estrutura e como rodar, e `Docs/` tem as decisões, o balanceamento, os vi
   `Client/` (Unity), `Tools/` (Bots, Balance, Launcher, instalador, publicar e `Blender/personagem`, o gerador da
   Lanceira por peças, com o próprio LEIAME) e `deploy/` (VPS). O Blender 5.4 do PC fica em
   `D:\Download\blender-5.4.0-alpha+main\blender-5.4.0\blender.exe`.
-- **Testes:** `dotnet test Game.slnx -c Release` (hoje são 252 no Shared e 194 no Servidor). Os testes de textos
+- **Testes:** `dotnet test Game.slnx -c Release` (hoje são 252 no Shared e 201 no Servidor). Os testes de textos
   exigem chaves literais no código: nada de `"login.head_" + i`, use um array de chaves literais.
-- **Protocolo:** `Shared/Game.Shared/Net/Messages.cs`, `Protocol.Version = 20`. Se mudar alguma mensagem, suba a
+- **Protocolo:** `Shared/Game.Shared/Net/Messages.cs`, `Protocol.Version = 21`. Se mudar alguma mensagem, suba a
   versão e atualize o cliente e o servidor juntos. O `FuzzTests` conta os tipos de mensagem.
 - **Migrações:** `cd Server/Game.Server && dotnet ef migrations add Nome -o Persistence/Migrations`.
 - **Textos:** `Shared/Game.Shared/Resources/Locales/pt-BR.txt`, lidos por `Loc.T("chave", args)`.
