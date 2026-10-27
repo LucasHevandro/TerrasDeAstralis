@@ -121,6 +121,7 @@ public sealed partial class GameWorld
         var dealt = -victim.Hp.Add(-amount);
         victim.StatsDirty = true;
         attacker.LastCombatAt = victim.LastCombatAt = now;
+        victim.Resting = false;
         SendNearby(victim.X, victim.Z, new CombatEvent
         {
             AttackerId = attacker.Id, TargetId = victim.Id, Source = source, Damage = dealt, Critical = hit.Critical, Grade = grade,

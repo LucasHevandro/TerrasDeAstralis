@@ -145,12 +145,44 @@ public class GameWorldTests
     }
 
     [Fact]
-    public void Jogadores_nascem_espalhados_perto_da_vila()
+    public void Jogadores_nascem_espalhados_em_volta_da_fogueira_da_vila()
     {
         var points = Enumerable.Range(1, 6).Select(GameWorld.SpawnPointFor).ToList();
 
         Assert.Equal(points.Count, points.Distinct().Count());
-        foreach (var (x, z) in points) Assert.InRange(MathF.Sqrt(x * x + z * z), 1.4f, 3.1f);
+        foreach (var (x, z) in points)
+        {
+            // Fora do fogo e perto o bastante para já poder sentar.
+            Assert.InRange(MathF.Sqrt(x * x + z * z), RestRules.FireRadius + 0.5f, RestRules.Radius);
+            Assert.True(RestRules.InRange(x, z));
+        }
+    }
+
+    [Fact]
+    public void Sentado_na_fogueira_recupera_tudo_e_levanta_ao_andar()
+    {
+        var world = new GameWorld(new FakeOutbox(), NoMonsters);
+        var player = world.AddPlayer("Ana", 0);
+        player.Hp.Add(-player.Hp.Max / 2);
+        player.Mp.Add(-player.Mp.Current);
+        player.Sp.Add(-player.Sp.Current);
+        var (hp, mp) = (player.Hp.Current, player.Mp.Current);
+
+        world.Handle(player.Id, new SetResting { Resting = true }, 1);
+        Assert.True(player.Resting);
+        for (var t = 1.25; t <= 3; t += 0.25) world.Tick(t);
+
+        Assert.True(player.Hp.Current - hp >= player.Hp.Max * RestRules.HpFractionPerSecond * 1.5f);
+        Assert.True(player.Mp.Current - mp >= player.Mp.Max * RestRules.MpFractionPerSecond * 1.5f);
+        Assert.True(player.Sp.Current >= RestRules.SpPerSecond * 1.5f);
+
+        world.Handle(player.Id, new MoveInput { Sequence = 1, X = player.X + 1, Z = player.Z }, 3.5);
+        Assert.False(player.Resting);
+
+        // Longe da fogueira, não senta.
+        player.Movement.Teleport(30, 30, 4);
+        world.Handle(player.Id, new SetResting { Resting = true }, 4);
+        Assert.False(player.Resting);
     }
 
     [Fact]

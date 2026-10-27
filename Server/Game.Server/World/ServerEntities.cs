@@ -110,6 +110,12 @@ public sealed class ServerPlayer
     public double LastCombatAt { get; set; } = double.NegativeInfinity;
     public float HpRegenCarry { get; set; }
 
+    /// <summary>Sentado na fogueira da vila (e onde sentou: andar levanta).</summary>
+    public bool Resting { get; set; }
+    public float RestX { get; set; }
+    public float RestZ { get; set; }
+    public float SpRegenCarry { get; set; }
+
     /// <summary>Conjurando uma skill até este instante (fora do combo): outra skill pedida antes espera na fila.</summary>
     public double CastUntil { get; set; }
 

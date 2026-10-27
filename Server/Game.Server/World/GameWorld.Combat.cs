@@ -52,13 +52,41 @@ public sealed partial class GameWorld
             if (player.Mp.Add(whole) != 0) player.StatsDirty = true;
         }
 
-        // Vida: bem devagar, e só fora de combate.
-        if (now - player.LastCombatAt < PlayerRules.OutOfCombatSeconds || player.Hp.Current >= player.Hp.Max) return;
-        player.HpRegenCarry += player.Hp.Max * PlayerRules.HpRegenFractionPerSecond * dt;
+        // Sentado na fogueira: vida, MP e SP voltam rápido.
+        if (player.Resting)
+        {
+            player.HpRegenCarry += player.Hp.Max * RestRules.HpFractionPerSecond * dt;
+            player.MpRegenCarry += player.Mp.Max * RestRules.MpFractionPerSecond * dt;
+            player.SpRegenCarry += RestRules.SpPerSecond * dt;
+            var sp = (int)player.SpRegenCarry;
+            player.SpRegenCarry -= sp;
+            if (sp > 0 && player.Sp.Add(sp) != 0) player.StatsDirty = true;
+        }
+        // Fora dela, a vida volta bem devagar, e só fora de combate.
+        else if (now - player.LastCombatAt < PlayerRules.OutOfCombatSeconds || player.Hp.Current >= player.Hp.Max) return;
+        else player.HpRegenCarry += player.Hp.Max * PlayerRules.HpRegenFractionPerSecond * dt;
         var hp = (int)player.HpRegenCarry;
         if (hp <= 0) return;
         player.HpRegenCarry -= hp;
         if (player.Hp.Add(hp) != 0) player.StatsDirty = true;
+    }
+
+    /// <summary>Sentar (só perto da fogueira da vila, vivo e fora do combo) ou levantar.</summary>
+    private void HandleRest(ServerPlayer player, bool rest)
+    {
+        if (!rest)
+        {
+            player.Resting = false;
+            return;
+        }
+        if (player.IsDead || player.Combo.State == ComboPhase.Active || player.DungeonId != 0 || player.ArenaId != 0 ||
+            !RestRules.InRange(player.X, player.Z))
+        {
+            Notify(player, LT("rest.too_far"));
+            return;
+        }
+        player.Resting = true;
+        (player.RestX, player.RestZ) = (player.X, player.Z);
     }
 
     private void HandleStartCombo(ServerPlayer player, StartCombo message, double now)
@@ -329,6 +357,7 @@ public sealed partial class GameWorld
         var dealt = -player.Hp.Add(-(monster.IsElite ? EliteRules.Damage(hit.Amount) : hit.Amount));
         player.StatsDirty = true;
         player.LastCombatAt = now;
+        player.Resting = false;
         SendNearby(player.X, player.Z, new CombatEvent
         {
             AttackerId = monster.Id, TargetId = player.Id, Source = source, Damage = dealt, Critical = hit.Critical,

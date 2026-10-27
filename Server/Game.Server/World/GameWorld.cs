@@ -204,13 +204,19 @@ public sealed partial class GameWorld
                 _outbox.Send(playerId, new Pong { ClientTime = ping.ClientTime, ServerTime = now });
                 break;
             case UseSkill use:
+                player.Resting = false;
                 HandleUseSkill(player, use, now);
                 break;
             case StartCombo start:
+                player.Resting = false;
                 HandleStartCombo(player, start, now);
                 break;
             case Finisher finisher:
+                player.Resting = false;
                 HandleFinisher(player, finisher, now);
+                break;
+            case SetResting rest:
+                HandleRest(player, rest.Resting);
                 break;
             case PickupLoot pickup:
                 HandlePickup(player, pickup, now);
@@ -344,6 +350,8 @@ public sealed partial class GameWorld
         if (player.Movement.TryMove(move.X, move.Z, now))
         {
             player.Yaw = move.Yaw;
+            // Andou: levanta da fogueira.
+            if (player.Resting && !InRange(player.X, player.Z, player.RestX, player.RestZ, 0.3f)) player.Resting = false;
             if ((player.DungeonId != 0 && ClampToDungeon(player, now)) || (player.ArenaId != 0 && ClampToArena(player, now)))
                 _outbox.Send(player.Id, new PositionCorrection { X = player.X, Z = player.Z });
             return;
@@ -376,7 +384,7 @@ public sealed partial class GameWorld
             snapshot.Entities.Add(new EntityState
             {
                 Id = other.Id, X = other.X, Z = other.Z, Yaw = other.Yaw, Hp = other.Hp.Current,
-                Flags = other.IsDead ? EntityState.FlagDead : (byte)0,
+                Flags = other.IsDead ? EntityState.FlagDead : other.Resting ? EntityState.FlagResting : (byte)0,
             });
         }
 
@@ -586,11 +594,14 @@ public sealed partial class GameWorld
     private static bool IsInsideWorld(float x, float z) =>
         !float.IsNaN(x) && !float.IsNaN(z) && x >= -130 && x <= 130 && z >= -70 && z <= 230;
 
-    /// <summary>Ponto de nascimento na vila, espalhado num círculo de 3 m para jogadores não nascerem um dentro do outro.</summary>
+    /// <summary>
+    /// Ponto de nascimento na vila: em volta da fogueira da praça (fora do fogo, dentro do raio de descanso), espalhado
+    /// para jogadores não nascerem um dentro do outro.
+    /// </summary>
     public static (float X, float Z) SpawnPointFor(int playerId)
     {
         var angle = playerId * 2.39996f; // ângulo áureo: pontos bem distribuídos
-        var radius = 1.5f + playerId % 3 * 0.75f;
+        var radius = RestRules.FireRadius + 1f + playerId % 3 * 0.75f;
         return (WorldContent.PlayerSpawnX + MathF.Cos(angle) * radius, WorldContent.PlayerSpawnZ + MathF.Sin(angle) * radius);
     }
 
