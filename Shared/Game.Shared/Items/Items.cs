@@ -113,6 +113,10 @@ namespace Game.Shared.Items
 
         // Consumíveis
         public int HealHp;
+        public int HealMp;
+
+        /// <summary>Poção (de vida ou de mana): usada pelo botão direito, pela barra de atalhos ou sozinha (MP).</summary>
+        public bool IsPotion => Kind == ItemKind.Consumable && (HealHp > 0 || HealMp > 0);
 
         /// <summary>Descrição no idioma do jogador (vazia se o item não tiver).</summary>
         public string Description =>
@@ -233,6 +237,16 @@ namespace Game.Shared.Items
             {
                 Id = "pocao_hp_m", Kind = ItemKind.Consumable, Rarity = ItemRarity.Common,
                 MaxStack = 50, HealHp = 1200,
+            });
+            list.Add(new ItemDefinition
+            {
+                Id = "pocao_mp_p", Kind = ItemKind.Consumable, Rarity = ItemRarity.Common,
+                MaxStack = 50, HealMp = 300,
+            });
+            list.Add(new ItemDefinition
+            {
+                Id = "pocao_mp_m", Kind = ItemKind.Consumable, Rarity = ItemRarity.Common,
+                MaxStack = 50, HealMp = 900,
             });
 
             // ===== Materiais dos monstros (vendáveis e para missões) =====

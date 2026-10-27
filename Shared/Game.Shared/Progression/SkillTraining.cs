@@ -27,8 +27,8 @@ namespace Game.Shared.Progression
         /// </summary>
         public const byte ItemBase = 200;
 
-        /// <summary>Itens que podem ir para a barra: as poções de vida.</summary>
-        public static readonly string[] HotbarItems = { "pocao_hp_p", "pocao_hp_m" };
+        /// <summary>Itens que podem ir para a barra: as poções. Só acrescente no fim (a posição é o valor salvo na casa).</summary>
+        public static readonly string[] HotbarItems = { "pocao_hp_p", "pocao_hp_m", "pocao_mp_p", "pocao_mp_m" };
 
         private const string ItemPrefix = "item:";
 

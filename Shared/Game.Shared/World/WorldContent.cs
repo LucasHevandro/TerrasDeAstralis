@@ -134,6 +134,7 @@ namespace Game.Shared.World
                 Drops = new DropTable(3, 8,
                     new DropEntry("pelo_macio", ItemRarity.Common, 0.6, 1, 2),
                     new DropEntry("pocao_hp_p", ItemRarity.Common, 0.15),
+                    new DropEntry("pocao_mp_p", ItemRarity.Common, 0.12),
                     Equip("armadura_ferro", 0.02), Equip("anel_ferro", 0.01)),
             }),
             Spawn(10, 46, 8, 11, new MonsterData
@@ -144,6 +145,7 @@ namespace Game.Shared.World
                 Drops = new DropTable(10, 25,
                     new DropEntry("pele_lobo", ItemRarity.Common, 0.5, 1, 2),
                     new DropEntry("presa_lobo", ItemRarity.Uncommon, 0.15),
+                    new DropEntry("pocao_mp_p", ItemRarity.Common, 0.1),
                     new DropEntry("nucleo_baixo", ItemRarity.Rare, 0.03),
                     Equip("luvas_ferro", 0.03), Equip("botas_ferro", 0.03), Equip("espada_ferro", 0.02),
                     Equip("cajado_ferro", 0.02), Equip("arco_ferro", 0.02), Equip("pedra_vigor", 0.01)),
@@ -170,6 +172,7 @@ namespace Game.Shared.World
                 AggroRadius = 6.5f, XpReward = 200, RespawnSeconds = 10,
                 Drops = new DropTable(30, 70,
                     new DropEntry("couro_javali", ItemRarity.Common, 0.5, 1, 3),
+                    new DropEntry("pocao_mp_m", ItemRarity.Common, 0.06),
                     new DropEntry("nucleo_baixo", ItemRarity.Rare, 0.06),
                     Equip("armadura_aco_negro", 0.02), Equip("botas_aco_negro", 0.03), Equip("pedra_furia", 0.01)),
             }),
@@ -369,7 +372,17 @@ namespace Game.Shared.World
         public const int MaxSp = 2000;
         public const int StartingSp = 1000;
         public const int SpPerHit = 60;
-        public const float MpRegenPerSecond = 10f;
+        /// <summary>MP que volta por segundo (era 10; baixou para as poções de mana terem uso).</summary>
+        public const float MpRegenPerSecond = 4f;
+
+        /// <summary>Fração da vida que volta por segundo, só fora de combate (bem mais lenta que o MP).</summary>
+        public const float HpRegenFractionPerSecond = 0.005f;
+
+        /// <summary>Segundos sem bater nem apanhar para a vida começar a voltar.</summary>
+        public const float OutOfCombatSeconds = 8f;
+
+        /// <summary>Recarga entre poções do mesmo tipo (vida e mana têm recargas separadas).</summary>
+        public const double PotionCooldownSeconds = 1.0;
         public const float RespawnSeconds = 4f;
         public const int FinisherBaseDamage = 400;
         public const float FinisherRange = 3f;
