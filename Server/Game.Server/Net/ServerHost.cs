@@ -32,6 +32,10 @@ public sealed record ServerOptions
     /// <summary>Dungeon fácil (vida e dano baixos, sem nível mínimo) para os bots de nível 1 conseguirem terminar.</summary>
     public bool DungeonTest { get; init; }
 
+    /// <summary>Nível mínimo das dungeons no lugar do catálogo (0 = o do catálogo). Dificuldade normal; para testes
+    /// com amigos ainda sem nível.</summary>
+    public int DungeonMinLevel { get; init; }
+
     /// <summary>Todo monstro comum do mundo aberto nasce elite (teste do visual).</summary>
     public bool AllElites { get; init; }
 
@@ -131,7 +135,8 @@ public sealed class ServerHost : IOutbox, IDisposable
         _saver = saver;
         _log = log ?? (_ => { });
         _listener = new TcpListener(IPAddress.Any, options.Port);
-        World = new GameWorld(this, uids: auth?.Uids, dungeonTuning: options.DungeonTest ? DungeonTuning.Test : null,
+        World = new GameWorld(this, uids: auth?.Uids, dungeonTuning: options.DungeonTest ? DungeonTuning.Test
+            : options.DungeonMinLevel > 0 ? DungeonTuning.Normal with { MinLevel = options.DungeonMinLevel } : null,
             arenaTeamSize: options.ArenaTeamSize, eliteChance: options.AllElites ? 1 : EliteRules.Chance)
         {
             GuestClass = options.GuestClass,

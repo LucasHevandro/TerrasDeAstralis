@@ -126,4 +126,23 @@ public class SkillTrainingTests
         Assert.Equal(4, veteran.LearnedSkills.Count);
         Assert.Equal(Bar(0, 1, 2, 3), veteran.Hotbar);
     }
+
+    [Fact]
+    public void Pocao_de_vida_vai_para_a_barra_e_volta_do_banco()
+    {
+        var (world, _, player) = Setup();
+        var small = SkillTraining.ItemValue("pocao_hp_p");
+        var medium = SkillTraining.ItemValue("pocao_hp_m");
+        Assert.NotEqual(SkillTraining.Empty, small);
+
+        // Poção repetida sai; valor de item que não existe (230) também.
+        world.Handle(player.Id, new SetHotbar { Slots = { 0, small, medium, small, 230 } }, 1);
+        Assert.Equal(Bar(0, small, medium), player.Hotbar);
+
+        var (snapshot, _) = world.CaptureForSave(player);
+        Assert.Equal("item:pocao_hp_p", snapshot.Hotbar[1]);
+        var record = AuthService.InitialCharacter(CharacterClass.Blade) with { Id = 9, Name = "Bia", Hotbar = snapshot.Hotbar };
+        var (_, _, back) = Setup(record);
+        Assert.Equal(Bar(0, small, medium), back.Hotbar);
+    }
 }

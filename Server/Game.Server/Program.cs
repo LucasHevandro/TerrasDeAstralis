@@ -14,6 +14,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 //   --db memory    banco em memória (tudo se perde ao desligar) — desenvolvimento sem Docker
 //   --guests       aceita entrar sem conta (bots e testes; convidados não são salvos)
 //   --dungeon-test dungeon fácil e sem nível mínimo (bots de nível 1 conseguem terminar)
+//   --dungeon-min-level N  nível mínimo das dungeons (1 = qualquer nível; 0 = o do catálogo), dificuldade normal
 //   --elites       todo monstro comum do mundo aberto nasce elite (para testar o visual)
 //   --guest-class c convidados entram com a classe c (blade, arcanist ou ranger; para testes)
 //   --arena-size N jogadores por time na arena (padrão 5; 1 para testar a dois)
@@ -56,6 +57,9 @@ for (var i = 0; i < args.Length; i++)
             break;
         case "--dungeon-test":
             options = options with { DungeonTest = true };
+            break;
+        case "--dungeon-min-level" when int.TryParse(value, out var dungeonMin):
+            options = options with { DungeonMinLevel = Math.Max(0, dungeonMin) };
             break;
         case "--elites":
             options = options with { AllElites = true };
@@ -186,6 +190,7 @@ host.World.SeedMarket(await store.MarketListingsAsync());
 host.World.RunCompleted += run => _ = store.RecordDungeonRunAsync(run).ContinueWith(
     t => Log($"Falha ao gravar o ranking: {t.Exception?.GetBaseException().Message}"), TaskContinuationOptions.OnlyOnFaulted);
 if (options.DungeonTest) Log("ATENÇÃO: dungeon de teste (fácil e sem nível mínimo).");
+else if (options.DungeonMinLevel > 0) Log($"ATENÇÃO: dungeons liberadas a partir do nível {options.DungeonMinLevel} (--dungeon-min-level).");
 if (options.AllElites) Log("ATENÇÃO: todo monstro do mundo aberto nasce elite (--elites).");
 if (options.GuestClass != CharacterClass.Blade) Log($"ATENÇÃO: convidados entram como {ClassInfo.TypeId(options.GuestClass)} (--guest-class).");
 

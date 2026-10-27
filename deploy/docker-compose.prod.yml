@@ -45,7 +45,8 @@ services:
         condition: service_healthy
     environment:
       GAME_DB: "Host=postgres;Port=5432;Database=game;Username=game;Password=${GAME_DB_PASSWORD}"
-    command: ["--max-per-ip", "${GAME_MAX_PER_IP:-8}"]
+    # GAME_DUNGEON_MIN_LEVEL=1 no deploy/.env libera as dungeons para qualquer nível (testes); 0 volta ao normal.
+    command: ["--max-per-ip", "${GAME_MAX_PER_IP:-8}", "--dungeon-min-level", "${GAME_DUNGEON_MIN_LEVEL:-0}"]
     ports:
       - "7777:7777"
       # API e /metrics só para dentro da VPS (curl http://127.0.0.1:7778/metrics); de fora, só pelo Caddy.
