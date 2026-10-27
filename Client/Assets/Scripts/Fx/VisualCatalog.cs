@@ -20,6 +20,9 @@ namespace Game.Client.Fx
 
         private static readonly Dictionary<string, GameObject> Cache = new Dictionary<string, GameObject>();
 
+        /// <summary>Tom dos itens de missão (vem antes de <see cref="Variants"/>, que o usa ao ser montado).</summary>
+        private static readonly Color QuestTint = new Color(1.5f, 1.25f, 0.55f);
+
         /// <summary>
         /// Variantes: um id sem prefab próprio usa o modelo de outro, maior ou menor e com a cor puxada para um tom
         /// (multiplica a cor dos materiais). Os monstros do Santuário reaproveitam os da Cripta e das Ruínas, e a chave do
@@ -37,6 +40,15 @@ namespace Game.Client.Fx
             ["eco_do_oraculo"] = ("servo_da_cripta", 1f, new Color(0.55f, 1f, 1.15f)),
             ["oraculo_corrompido"] = ("senhor_da_cripta", 1.05f, new Color(0.5f, 1f, 1.4f)),
             ["chave_santuario"] = ("chave_cripta", 1f, new Color(1.7f, 1.3f, 0.6f)),
+            // Itens de missão: o modelo do material, puxado para o dourado (só quem tem a missão vê).
+            ["missao_pelo_macio"] = ("pelo_macio", 1f, QuestTint),
+            ["missao_pele_lobo"] = ("pele_lobo", 1f, QuestTint),
+            ["missao_presa_lobo"] = ("presa_lobo", 1f, QuestTint),
+            ["missao_couro_javali"] = ("couro_javali", 1f, QuestTint),
+            ["missao_seda"] = ("seda", 1f, QuestTint),
+            ["missao_veneno"] = ("veneno", 1f, QuestTint),
+            ["missao_fragmento_pedra"] = ("fragmento_pedra", 1f, QuestTint),
+            ["missao_essencia"] = ("essencia", 1f, QuestTint),
         };
 
         /// <summary>O id cujo modelo é usado (o próprio, ou a base da variante).</summary>
