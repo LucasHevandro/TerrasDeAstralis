@@ -26,7 +26,9 @@ namespace Game.Client.Editor
 
             foreach (var spawn in WorldContent.Spawns())
             {
-                if (!MonsterVisuals.Looks.TryGetValue(spawn.Data.Id, out var look))
+                // Variantes (lobo-alfa, aranha-rainha...) usam a forma simples do monstro base.
+                if (!MonsterVisuals.Looks.TryGetValue(spawn.Data.Id, out var look) &&
+                    !MonsterVisuals.Looks.TryGetValue(Fx.VisualCatalog.BaseOf(spawn.Data.Id), out look))
                     throw new System.InvalidOperationException($"Sem aparência definida para o monstro {spawn.Data.Id}.");
                 Spawner(world, Ground.Point(spawn.CenterX, spawn.CenterZ), spawn.Count, spawn.Radius, look.Shape,
                     look.Scale, look.Color, ring, telegraph, spawn.Data, spawn.IsBoss);
