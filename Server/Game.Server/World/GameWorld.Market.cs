@@ -97,6 +97,11 @@ public sealed partial class GameWorld
     {
         var item = player.Bag[slot];
         if (item == null) return;
+        if (ItemCatalog.Find(item.ItemId) is { IsQuestItem: true })
+        {
+            Notify(player, LT("item.quest_bound"));
+            return;
+        }
         if (!MarketRules.ValidPrice(price))
         {
             Notify(player, LT("market.bad_price", MarketRules.MinPrice, MarketRules.MaxPrice));

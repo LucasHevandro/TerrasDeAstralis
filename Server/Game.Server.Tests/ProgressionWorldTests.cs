@@ -290,6 +290,60 @@ public class ProgressionWorldTests
     }
 
     [Fact]
+    public void Item_de_missao_so_cai_para_quem_tem_a_missao_e_so_ele_ve()
+    {
+        // Ana tem a missão dos pelos; Bia, do mesmo grupo de teste, não.
+        var record = AuthService.InitialCharacter(CharacterClass.Blade, NewUid) with
+        {
+            Id = 7, AccountId = 1, Name = "Ana", Level = 5,
+            Quests = new[] { new QuestRecord("pelos_para_o_inverno", false, Array.Empty<int>()) },
+        };
+        var (world, outbox, ana) = Setup(record: record);
+        var bia = world.AddPlayer("", 0, null,
+            AuthService.InitialCharacter(CharacterClass.Blade, NewUid) with { Id = 8, AccountId = 2, Name = "Bia" });
+        bia.Movement.Teleport(0, 0, 0);
+
+        world.Handle(ana.Id, new UseSkill { Slot = 0, TargetId = world.Monsters.Single().Id }, 1);
+        world.Tick(1);
+
+        // O material de venda cai como sempre; o de missão é só da Ana e só ela recebe a mensagem dele.
+        var quest = Assert.Single(world.Loot, l => l.Drop.ItemId == "missao_pelo_macio");
+        Assert.Equal(ana.Id, quest.OwnerId);
+        Assert.Contains(world.Loot, l => l.Drop.ItemId == "pelo_macio");
+        Assert.Contains(outbox.To<LootSpawned>(ana.Id), l => l.ItemId == "missao_pelo_macio");
+        Assert.DoesNotContain(outbox.To<LootSpawned>(bia.Id), l => l.ItemId == "missao_pelo_macio");
+        world.Handle(bia.Id, new PickupLoot { LootId = quest.Id }, 1.1);
+        Assert.Equal(0, bia.Bag.Count("missao_pelo_macio"));
+        world.Handle(ana.Id, new PickupLoot { LootId = quest.Id }, 1.2);
+        Assert.True(ana.Bag.Count("missao_pelo_macio") > 0);
+
+        // Não vende e não vai para o mercado; desistir da missão tira da bolsa.
+        GoTo(ana, NpcCatalog.Merchant);
+        var slot = ana.Bag.SlotOf(ana.Bag.Items().First(i => i.Item.ItemId == "missao_pelo_macio").Item.Uid);
+        world.Handle(ana.Id, new ShopCommand { Action = ShopActionKind.Sell, Slot = (ushort)slot, Quantity = 1 }, 2);
+        Assert.True(ana.Bag.Count("missao_pelo_macio") > 0);
+        Assert.Contains(outbox.Notices(ana.Id), n => n.StartsWith("Item de missão"));
+        world.Handle(ana.Id, new QuestCommand { Action = QuestActionKind.Abandon, QuestId = "pelos_para_o_inverno" }, 3);
+        Assert.Equal(0, ana.Bag.Count("missao_pelo_macio"));
+    }
+
+    [Fact]
+    public void Material_ja_juntado_para_a_missao_vira_item_de_missao_ao_entrar()
+    {
+        var bag = AuthService.InitialCharacter(CharacterClass.Blade, NewUid).Items.ToList();
+        bag.Add(new ItemRecord(NewUid(), ItemContainerKind.Bag, 30, "pelo_macio", 11));
+        var record = AuthService.InitialCharacter(CharacterClass.Blade, NewUid) with
+        {
+            Id = 7, AccountId = 1, Name = "Ana", Level = 5, Items = bag,
+            Quests = new[] { new QuestRecord("pelos_para_o_inverno", false, Array.Empty<int>()) },
+        };
+        var (_, _, ana) = Setup(record: record);
+
+        Assert.Equal(8, ana.Bag.Count("missao_pelo_macio")); // só o que a missão pede
+        Assert.Equal(3, ana.Bag.Count("pelo_macio"));
+    }
+
+    [Fact]
     public void Bolsa_cheia_deixa_o_item_no_chao()
     {
         var (world, outbox, player) = Setup();

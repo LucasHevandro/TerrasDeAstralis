@@ -412,7 +412,7 @@ public sealed partial class GameWorld
 
         foreach (var loot in _loot.Values)
         {
-            var near = InRange(player.X, player.Z, loot.X, loot.Z, InterestRadius);
+            var near = loot.VisibleTo(player.Id) && InRange(player.X, player.Z, loot.X, loot.Z, InterestRadius);
             if (near && player.KnownLoot.Add(loot.Id)) _outbox.Send(player.Id, LootMessage(loot));
             else if (!near && player.KnownLoot.Remove(loot.Id)) _outbox.Send(player.Id, new LootRemoved { LootId = loot.Id });
         }
@@ -542,6 +542,8 @@ public sealed partial class GameWorld
             character.Quests.Where(q => q.Completed && q.CompletedDay == 0).Select(q => q.QuestId),
             character.Quests.Where(q => !q.Completed).Select(q => new QuestProgress(q.QuestId, q.Counts.ToArray())),
             character.Quests.Where(q => q.Completed && q.CompletedDay != 0).Select(q => new KeyValuePair<string, int>(q.QuestId, q.CompletedDay)));
+        // De antes dos itens de missão: o material já juntado para uma coleta ativa vira item de missão.
+        QuestItems.ConvertMaterials(player.Quests, player.Bag, _uids.Next);
 
         // Relações repetidas ou consigo mesmo (dados estragados) ficam de fora.
         foreach (var relation in character.Relations)

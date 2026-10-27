@@ -329,6 +329,11 @@ public sealed class ServerLoot
     public double OwnerUntil { get; init; }
     public double ExpiresAt { get; init; }
 
+    /// <summary>Item de missão: só o dono vê e pega (cada um com a missão recebe o seu).</summary>
+    public bool Personal { get; init; }
+
+    public bool VisibleTo(int playerId) => !Personal || playerId == OwnerId;
+
     public bool CanBePickedBy(int playerId, int partyId, double now) =>
-        playerId == OwnerId || (OwnerPartyId != 0 && partyId == OwnerPartyId) || now >= OwnerUntil;
+        playerId == OwnerId || (!Personal && ((OwnerPartyId != 0 && partyId == OwnerPartyId) || now >= OwnerUntil));
 }

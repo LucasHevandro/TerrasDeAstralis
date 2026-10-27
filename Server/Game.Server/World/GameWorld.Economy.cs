@@ -65,6 +65,11 @@ public sealed partial class GameWorld
         var item = player.Bag[slot];
         if (item == null) return;
         var definition = ItemCatalog.Get(item.ItemId);
+        if (definition.IsQuestItem)
+        {
+            Notify(player, LT("item.quest_bound"));
+            return;
+        }
         quantity = Math.Clamp(quantity <= 0 ? item.Quantity : quantity, 1, item.Quantity);
         var price = EconomyRules.SellPrice(definition, item.Upgrade) * quantity;
         if (quantity == item.Quantity) player.Bag.Take(slot);

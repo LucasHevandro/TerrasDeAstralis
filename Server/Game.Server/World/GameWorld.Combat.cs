@@ -624,6 +624,24 @@ public sealed partial class GameWorld
                 OwnerUntil = now + ServerLoot.OwnerSeconds, ExpiresAt = now + ServerLoot.LifetimeSeconds,
             });
         }
+
+        // Itens de missão: cada um que participou e ainda precisa recebe o seu sorteio, só para ele.
+        var index = loot.Items.Count;
+        foreach (var member in sharing.Concat(helpers.Where(h => !sharing.Contains(h))).Where(m => !m.IsDead))
+        {
+            foreach (var drop in QuestItems.Roll(monster.Data, member.Quests, member.Bag, _random))
+            {
+                var angle = index * 2.4f;
+                var distance = 0.6f + 0.25f * index++;
+                var id = _nextLootId++;
+                _loot.Add(id, new ServerLoot
+                {
+                    Id = id, Drop = drop, OwnerId = member.Id, Personal = true,
+                    X = monster.X + MathF.Cos(angle) * distance, Z = monster.Z + MathF.Sin(angle) * distance,
+                    OwnerUntil = now + ServerLoot.LifetimeSeconds, ExpiresAt = now + ServerLoot.LifetimeSeconds,
+                });
+            }
+        }
     }
 
     /// <summary>

@@ -342,6 +342,8 @@ public sealed partial class GameWorld
                 reason = player.Quests.Abandon(quest.Id) ? null : LT("quest.not_active");
                 break;
         }
+        // Entregou ou desistiu: o item de missão que nenhuma missão ativa pede mais sai da bolsa.
+        if (reason == null && QuestItems.Cleanup(player.Quests, player.Bag)) player.InventoryDirty = true;
 
         if (reason != null) Notify(player, reason);
         player.QuestsDirty = true;
