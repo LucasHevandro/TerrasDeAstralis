@@ -542,6 +542,11 @@ public sealed class Bot
             case PartyInvite invite:
                 if (AutoAcceptInvites) Connection.Send(new PartyCommand { Action = PartyActionKind.Accept, TargetId = invite.InviterId });
                 break;
+            case FriendInvite friendInvite:
+                // A amizade agora precisa do aceite (o teste social do exe convida o bot).
+                if (AutoAcceptInvites)
+                    Connection.Send(new SocialCommand { Action = RelationActionKind.AcceptFriend, TargetName = friendInvite.InviterName });
+                break;
             case PvpState pvp:
                 if (pvp is { Mode: PvpMode.Arena, Finished: true } && _pvp is { Mode: PvpMode.Arena, Finished: false })
                 {
