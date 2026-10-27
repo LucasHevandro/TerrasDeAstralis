@@ -57,6 +57,8 @@ namespace Game.Client.UI
         private bool _cursorToEnd;
         private PartyInvite _invite;
         private float _inviteUntil;
+        private FriendInvite _friendInvite;
+        private float _friendInviteUntil;
 
         private GUIStyle _label;
         private GUIStyle _small;
@@ -82,6 +84,7 @@ namespace Game.Client.UI
         public SocialLists Lists => _lists;
         public void SetFriendsOpen(bool open) => _friendsOpen = open;
         public PartyInvite PendingInvite => Time.unscaledTime < _inviteUntil ? _invite : null;
+        public FriendInvite PendingFriendInvite => Time.unscaledTime < _friendInviteUntil ? _friendInvite : null;
         public IEnumerable<string> RecentLines { get { foreach (var line in _lines) yield return line.Text; } }
 
         /// <summary>Para o teste automático: manda uma linha como se o jogador tivesse digitado.</summary>
@@ -145,6 +148,11 @@ namespace Game.Client.UI
                     _inviteUntil = Time.unscaledTime + invite.Seconds;
                     AddLine(ChatChannel.System, Loc.T("party.invited_you", invite.InviterName));
                     break;
+                case FriendInvite friend:
+                    _friendInvite = friend;
+                    _friendInviteUntil = Time.unscaledTime + friend.Seconds;
+                    AddLine(ChatChannel.System, Loc.T("friend.invite_title", Escape(friend.InviterName)));
+                    break;
             }
         }
 
@@ -198,6 +206,7 @@ namespace Game.Client.UI
             if (_friendsOpen) DrawFriends();
             else GameInput.FieldFocused = false;
             if (PendingInvite != null) DrawInvite();
+            else if (PendingFriendInvite != null) DrawFriendInvite();
 
             GUI.matrix = Matrix4x4.identity;
             GUI.color = Color.white;
@@ -452,6 +461,30 @@ namespace Game.Client.UI
             _session.Send(new PartyCommand { Action = accept ? PartyActionKind.Accept : PartyActionKind.Decline, TargetId = invite.InviterId });
             _invite = null;
             _inviteUntil = 0;
+        }
+
+        /// <summary>Convite de amizade: no mesmo lugar do convite de grupo (o de grupo tem a vez, se vierem os dois).</summary>
+        private void DrawFriendInvite()
+        {
+            var invite = PendingFriendInvite;
+            var rect = new Rect(VirtualWidth / 2 - 230, 300, 460, 130);
+            UiTheme.Panel(rect);
+            AddRect(rect);
+            var seconds = Mathf.CeilToInt(_friendInviteUntil - Time.unscaledTime);
+            GUI.Label(new Rect(rect.x, rect.y + 14, rect.width, 30), Loc.T("friend.invite_title", Escape(invite.InviterName)), _label.WithCenter());
+            GUI.Label(new Rect(rect.x, rect.y + 44, rect.width, 22), Loc.T("friend.invite_expires", seconds), _small.WithCenter());
+            if (GUI.Button(new Rect(rect.x + 60, rect.y + 76, 150, 36), Loc.T("friend.invite_accept"), _button)) AnswerFriend(true);
+            if (GUI.Button(new Rect(rect.xMax - 210, rect.y + 76, 150, 36), Loc.T("friend.invite_decline"), _button)) AnswerFriend(false);
+        }
+
+        /// <summary>Responde ao convite de amizade (também usado pelo teste automático).</summary>
+        public void AnswerFriend(bool accept)
+        {
+            var invite = PendingFriendInvite;
+            if (invite == null) return;
+            Relation(accept ? RelationActionKind.AcceptFriend : RelationActionKind.DeclineFriend, invite.InviterName);
+            _friendInvite = null;
+            _friendInviteUntil = 0;
         }
 
         // ----- Envio -----
