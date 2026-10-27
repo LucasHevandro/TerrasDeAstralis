@@ -37,8 +37,8 @@ namespace Game.Client.UI
         private void DrawSkills(NpcDefinition npc)
         {
             var trainer = npc != null && npc.Role == NpcRole.Trainer;
-            if (trainer) DrawSkillList(Window(new Rect(20, 156, 500, 560), Loc.T("skills.trainer_title", npc.Name)), true);
-            else if (_skillsOpen) DrawSkillList(Window(new Rect(20, 156, 500, 520), Loc.T("skills.title", KeyBindings.Label(GameAction.Skills))), false);
+            if (trainer) DrawSkillList(Window(new Rect(LeftColumnX, 156, 500, 560), Loc.T("skills.trainer_title", npc.Name)), true);
+            else if (_skillsOpen) DrawSkillList(Window(new Rect(LeftColumnX, 156, 500, 520), Loc.T("skills.title", KeyBindings.Label(GameAction.Skills))), false);
             HandleHotbar();
         }
 

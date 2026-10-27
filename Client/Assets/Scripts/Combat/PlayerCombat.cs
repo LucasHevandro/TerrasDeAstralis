@@ -281,7 +281,8 @@ namespace Game.Client.Combat
             {
                 var index = CharacterState.HotbarSkill(slot);
                 if (index < 0 || index >= skills.Count || (Online && !CharacterState.SkillUnlocked(index))) continue;
-                if (SkillRules.Check(skills[index], index, _cooldowns, Mp, distance, Time.time) != SkillUseCheck.Ok) continue;
+                var check = SkillRules.Check(skills[index], index, _cooldowns, Mp, distance, Time.time);
+                if (check != SkillUseCheck.Ok && !(check == SkillUseCheck.NotEnoughMp && ManaPotionCovers(skills[index]))) continue;
                 UseSkill(index, now);
                 return;
             }
@@ -312,6 +313,21 @@ namespace Game.Client.Combat
             }
             var index = CharacterState.HotbarSkill(slot);
             if (index >= 0) RequestSkill(index);
+        }
+
+        /// <summary>Online, há na bolsa poção de mana que, bebida, paga a skill (o servidor bebe sozinho).</summary>
+        private bool ManaPotionCovers(SkillData skill)
+        {
+            if (!Online || CharacterState.Bag == null) return false;
+            var best = 0;
+            for (var slot = 0; slot < CharacterState.Bag.Size; slot++)
+            {
+                var item = CharacterState.Bag[slot];
+                if (item == null) continue;
+                var definition = ItemCatalog.Find(item.ItemId);
+                if (definition != null && definition.HealMp > best) best = definition.HealMp;
+            }
+            return best > 0 && Mp.Current + best >= skill.MpCost;
         }
 
         /// <summary>Usa o item da bolsa (o mesmo que o botão direito no inventário); o servidor confere a recarga.</summary>
@@ -430,6 +446,8 @@ namespace Game.Client.Combat
                     Refuse(Loc.T("combat.out_of_range"));
                     return;
                 case SkillUseCheck.NotEnoughMp:
+                    // Com poção de mana na bolsa, o servidor bebe e usa a skill: manda assim mesmo.
+                    if (ManaPotionCovers(skill)) break;
                     Refuse(Loc.T("combat.no_mp", Mp.Current, skill.MpCost));
                     return;
             }

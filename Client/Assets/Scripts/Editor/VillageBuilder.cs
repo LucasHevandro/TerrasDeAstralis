@@ -338,15 +338,17 @@ namespace Game.Client.Editor
                         break;
                     case NpcRole.DungeonPortal:
                         // Portão de pedra com o portal brilhando (a entrada da Cripta). Sem o pacote, o arco feito em código.
-                        if (PackProp(corner, "wall_straight_gate", new Vector3(0, 0, 0.3f), 90f, 2.6f, true))
+                        // Recuado (gate) para a guardiã ficar na frente do portão, e não dentro dele.
+                        const float gate = -2.3f;
+                        if (PackProp(corner, "wall_straight_gate", new Vector3(0, 0, 0.3f + gate), 90f, 2.6f, true))
                         {
-                            PackProp(corner, "flag_red", new Vector3(-2.9f, 0, 0.1f), 0f, 3.2f);
-                            PackProp(corner, "flag_red", new Vector3(2.9f, 0, 0.1f), 0f, 3.2f);
+                            PackProp(corner, "flag_red", new Vector3(-2.9f, 0, 0.1f + gate), 0f, 3.2f);
+                            PackProp(corner, "flag_red", new Vector3(2.9f, 0, 0.1f + gate), 0f, 3.2f);
                             Part(corner, "Portal", portalGlow, k =>
                             {
                                 // A porta aparece dos dois lados do portão: o brilho também.
-                                k.Box(0, new Vector3(0, 0.15f, 1.55f), Quaternion.identity, new Vector3(1.7f, 2.5f, 0.06f));
-                                k.Box(0, new Vector3(0, 0.15f, -0.95f), Quaternion.identity, new Vector3(1.7f, 2.5f, 0.06f));
+                                k.Box(0, new Vector3(0, 0.15f, 1.55f + gate), Quaternion.identity, new Vector3(1.7f, 2.5f, 0.06f));
+                                k.Box(0, new Vector3(0, 0.15f, -0.95f + gate), Quaternion.identity, new Vector3(1.7f, 2.5f, 0.06f));
                             });
                         }
                         else
@@ -354,15 +356,15 @@ namespace Game.Client.Editor
                             Part(corner, "Arco", stone, k =>
                             {
                                 foreach (var x in new[] { -1.3f, 1.3f })
-                                    k.Box(0, new Vector3(x, 0, 0.3f), Quaternion.identity, new Vector3(0.6f, 3.2f, 0.7f));
-                                k.Box(0, new Vector3(0, 3.2f, 0.3f), Quaternion.identity, new Vector3(3.4f, 0.6f, 0.8f));
-                                k.Box(0, new Vector3(0, 0, 0.3f), Quaternion.identity, new Vector3(3.6f, 0.2f, 1.2f));
+                                    k.Box(0, new Vector3(x, 0, 0.3f + gate), Quaternion.identity, new Vector3(0.6f, 3.2f, 0.7f));
+                                k.Box(0, new Vector3(0, 3.2f, 0.3f + gate), Quaternion.identity, new Vector3(3.4f, 0.6f, 0.8f));
+                                k.Box(0, new Vector3(0, 0, 0.3f + gate), Quaternion.identity, new Vector3(3.6f, 0.2f, 1.2f));
                             }, collider: true);
-                            Part(corner, "Portal", portalGlow, k => k.Box(0, new Vector3(0, 0.2f, 0.3f), Quaternion.identity, new Vector3(2f, 3f, 0.08f)));
+                            Part(corner, "Portal", portalGlow, k => k.Box(0, new Vector3(0, 0.2f, 0.3f + gate), Quaternion.identity, new Vector3(2f, 3f, 0.08f)));
                         }
                         var light = new GameObject("Luz do portal").AddComponent<Light>();
                         light.transform.SetParent(corner, false);
-                        light.transform.localPosition = new Vector3(0, 1.6f, -0.4f);
+                        light.transform.localPosition = new Vector3(0, 1.6f, -0.4f + gate);
                         light.type = LightType.Point;
                         light.color = new Color(0.6f, 0.4f, 1f);
                         light.range = 6f;

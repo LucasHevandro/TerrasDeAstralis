@@ -276,6 +276,8 @@ namespace Game.Client.Editor
             Gem("pedra_precisao", new Color(1f, 0.9f, 0.3f));
             Potion("pocao_hp_p", new Color(1f, 0.2f, 0.25f), 1f);
             Potion("pocao_hp_m", new Color(1f, 0.15f, 0.3f), 1.3f);
+            Potion("pocao_mp_p", new Color(0.25f, 0.45f, 1f), 1f);
+            Potion("pocao_mp_m", new Color(0.2f, 0.35f, 1f), 1.3f);
             Lump("pelo_macio", new Color(0.95f, 0.93f, 0.88f), new Vector3(0.2f, 0.12f, 0.2f), 0.25f);
             Lump("pele_lobo", new Color(0.5f, 0.5f, 0.55f), new Vector3(0.28f, 0.05f, 0.22f), 0.2f);
             Lump("couro_javali", new Color(0.42f, 0.28f, 0.18f), new Vector3(0.3f, 0.05f, 0.24f), 0.2f);

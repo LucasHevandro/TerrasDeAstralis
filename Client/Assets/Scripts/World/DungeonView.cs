@@ -106,7 +106,8 @@ namespace Game.Client.World
                     Kit.Place(_root.transform, wallPiece, new Vector3(-definition.HalfWidth - 0.3f, 0, z), Quaternion.LookRotation(Vector3.left));
                     Kit.Place(_root.transform, wallPiece, new Vector3(definition.HalfWidth + 0.3f, 0, z - 4f), Quaternion.LookRotation(Vector3.right));
                 }
-                Kit.Place(_root.transform, wallPiece, new Vector3(definition.HalfWidth + 0.3f, 0, length - 2f + 4f), Quaternion.LookRotation(Vector3.right));
+                // Última peça da direita (o laço para 4 m antes): fecha o trecho junto ao fundo, que ficava aberto.
+                Kit.Place(_root.transform, wallPiece, new Vector3(definition.HalfWidth + 0.3f, 0, length - 2f), Quaternion.LookRotation(Vector3.right));
                 for (var x = -definition.HalfWidth + 2f; x < definition.HalfWidth; x += 4f)
                 {
                     Kit.Place(_root.transform, wallPiece, new Vector3(x, 0, length + 0.3f), Quaternion.identity);

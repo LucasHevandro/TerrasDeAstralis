@@ -143,15 +143,17 @@ namespace Game.Client.Editor
                 ? woodFence[0] : Variants("cerca", 1, Fence)[0];
             var fenceMaterials = villagePack ? new[] { villageAtlas } : new[] { wood };
             var fenceScale = villagePack ? 2.9f : 1f;
-            for (var a = 0f; a < 360f; a += 6.5f)
+            const float fenceRadius = 29f, fenceStep = 6.5f;
+            for (var a = 0f; a < 360f; a += fenceStep)
             {
                 if (a > 66 && a < 114) continue; // passagem da estrada
                 var angle = a * Mathf.Deg2Rad;
-                var position = new Vector3(Mathf.Cos(angle) * 29f, 0, Mathf.Sin(angle) * 29f);
+                var position = new Vector3(Mathf.Cos(angle) * fenceRadius, 0, Mathf.Sin(angle) * fenceRadius);
                 if (Ground.DistanceToRoad(position.x, position.z) < 4f || Ground.InRiver(position.x, position.z, 2f)) continue;
                 // A cerca do pacote corre no eixo Z: gira 90° para seguir o anel.
                 var along = villagePack ? Quaternion.LookRotation(new Vector3(-position.z, 0, position.x)) : Quaternion.LookRotation(position.normalized);
-                Place(village, "Cerca", fence, fenceMaterials, position, along, fenceScale);
+                var piece = Place(village, "Cerca", fence, fenceMaterials, position, along, fenceScale, box: true);
+                FenceCollider(piece, 2f * Mathf.PI * fenceRadius * fenceStep / 360f + 0.3f, fenceScale);
             }
             if (villagePack && PackMeshes.Load(PackMeshes.Village, "building_well_red") is { Length: > 0 } well)
                 Place(village, "Poço", well[0], new[] { villageAtlas }, new Vector3(-11f, 0, -11f), Quaternion.Euler(0, 30, 0), 4.5f, collider: 1.5f);
@@ -357,6 +359,21 @@ namespace Game.Client.Editor
             }
             GameObjectUtility.SetStaticEditorFlags(obj, StaticEditorFlags.BatchingStatic | StaticEditorFlags.OccluderStatic | StaticEditorFlags.OccludeeStatic);
             return obj;
+        }
+
+        /// <summary>
+        /// Caixa da cerca: comprida até encostar na próxima (sem fresta para passar), com 60 cm de espessura e 2,2 m de
+        /// altura. Antes a cerca não tinha colisão e dava para atravessar.
+        /// </summary>
+        private static void FenceCollider(GameObject piece, float length, float scale)
+        {
+            var box = piece.GetComponent<BoxCollider>();
+            var size = box.size;
+            var alongZ = size.z >= size.x;
+            var longSide = Mathf.Max(alongZ ? size.z : size.x, length / scale);
+            var shortSide = Mathf.Max(alongZ ? size.x : size.z, 0.6f / scale);
+            box.size = new Vector3(alongZ ? shortSide : longSide, Mathf.Max(size.y, 2.2f / scale), alongZ ? longSide : shortSide);
+            box.center = new Vector3(box.center.x, box.size.y / 2f, box.center.z);
         }
 
         /// <summary>Fogo do braseiro: partículas e, em metade deles, uma luz que tremula.</summary>

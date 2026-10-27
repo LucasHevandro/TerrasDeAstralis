@@ -283,6 +283,13 @@ namespace Game.Client.UI
             return rect;
         }
 
+        /// <summary>
+        /// X das janelas da coluna da esquerda (mestre de skills, skills, atributos). Em grupo, o painel do grupo ocupa
+        /// esse canto (x 20 a 340): a janela abre logo ao lado, sem ficar por baixo dele.
+        /// </summary>
+        private static float LeftColumnX =>
+            SocialWindows.Instance != null && SocialWindows.Instance.Party != null && SocialWindows.Instance.Party.Members.Count > 0 ? 356f : 20f;
+
         // ----- Inventário e equipamento -----
 
         private Rect InventoryRect => new Rect(VirtualWidth - 480, 120, 460, 400);
@@ -952,7 +959,7 @@ namespace Game.Client.UI
         private void DrawAttributes()
         {
             var sheet = CharacterState.Sheet;
-            var rect = Window(new Rect(20, 340, 420, 400), Loc.T("attr.title", KeyBindings.Label(GameAction.Attributes)));
+            var rect = Window(new Rect(LeftColumnX, 340, 420, 400), Loc.T("attr.title", KeyBindings.Label(GameAction.Attributes)));
             if (sheet == null) return;
             var x = rect.x + 14;
             var y = rect.y + 46;
