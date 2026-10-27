@@ -105,6 +105,7 @@ zone.arena_do_guardiao = Arena do Guardião
 # ===== Skills =====
 skill.corte = Corte
 skill.giro_de_lamina = Giro de Lâmina
+skill.taunt_hint = Provoca: os monstros atingidos passam a atacar você.
 skill.lanca_de_forca = Lança de Força
 skill.explosao_arcana = Explosão Arcana
 skill.golpe_runico = Golpe Rúnico
