@@ -9,8 +9,8 @@ tem a estrutura e como rodar, e `Docs/` tem as decisões, o balanceamento, os vi
 - **Commit por camada**, com prefixo: `Shared:`, `Servidor:`, `Cliente:`, `Tools:` e `Docs:`. Um commit por camada
   tocada, com a linha `Co-Authored-By` no fim.
 - **Push e merge só com autorização.** O usuário costuma responder "Pode enviar a branch ao GitHub e mesclar na main."
-  O fluxo é `git push origin feat/mundo-visual` e `git push origin feat/mundo-visual:main` (fast-forward), depois
-  `git branch -f main feat/mundo-visual`.
+  O fluxo é `git push origin develop` e `git push origin develop:main` (fast-forward), depois
+  `git branch -f main develop`.
 - **Depois de rodar o exe com `-screen-*`**, apague `Screenmanager*` e `UnitySelectMonitor*` em
   `HKCU:\Software\Astralis\Terras de Astralis`. Senão o jogo dele abre em janela no segundo monitor.
 - **Senhas e tokens nunca são digitados pelo Claude.** Não peça e não repita credenciais; o usuário digita.
@@ -19,13 +19,16 @@ tem a estrutura e como rodar, e `Docs/` tem as decisões, o balanceamento, os vi
 
 ## Repositório
 
-- **GitHub:** `LucasHevandro/TerrasDeAstralis` (era `Cabal`). Trabalhe na branch `feat/mundo-visual`; a `main`
-  anda junto, por fast-forward. A branch padrão antiga do GitHub ainda pode ser `feat/fase3-rede`.
+- **GitHub:** `LucasHevandro/TerrasDeAstralis` (era `Cabal`). Só existem duas branches (desde 2026-10-27): a
+  `develop`, onde se desenvolve, e a `main`, que recebe a `develop` por fast-forward quando o usuário autoriza. A VM
+  roda a `main`.
 - **Pastas:** `Shared/Game.Shared` (netstandard2.1, também usada pelo Unity como pacote local), `Server/Game.Server`,
-  `Client/` (Unity), `Tools/` (Bots, Balance, Launcher, instalador, publicar) e `deploy/` (VPS).
-- **Testes:** `dotnet test Game.slnx -c Release` (hoje são 251 no Shared e 192 no Servidor). Os testes de textos
+  `Client/` (Unity), `Tools/` (Bots, Balance, Launcher, instalador, publicar e `Blender/personagem`, o gerador da
+  Lanceira por peças, com o próprio LEIAME) e `deploy/` (VPS). O Blender 5.4 do PC fica em
+  `D:\Download\blender-5.4.0-alpha+main\blender-5.4.0\blender.exe`.
+- **Testes:** `dotnet test Game.slnx -c Release` (hoje são 252 no Shared e 194 no Servidor). Os testes de textos
   exigem chaves literais no código: nada de `"login.head_" + i`, use um array de chaves literais.
-- **Protocolo:** `Shared/Game.Shared/Net/Messages.cs`, `Protocol.Version = 19`. Se mudar alguma mensagem, suba a
+- **Protocolo:** `Shared/Game.Shared/Net/Messages.cs`, `Protocol.Version = 20`. Se mudar alguma mensagem, suba a
   versão e atualize o cliente e o servidor juntos. O `FuzzTests` conta os tipos de mensagem.
 - **Migrações:** `cd Server/Game.Server && dotnet ef migrations add Nome -o Persistence/Migrations`.
 - **Textos:** `Shared/Game.Shared/Resources/Locales/pt-BR.txt`, lidos por `Loc.T("chave", args)`.
