@@ -491,8 +491,14 @@ namespace Game.Client.UI
                 ? Loc.T("skill.info_area", skill.BaseDamage, skill.PowerScale, skill.Range, skill.AreaRadius)
                 : Loc.T("skill.info", skill.BaseDamage, skill.PowerScale, skill.Range);
             var text = $"<b>{skill.Name}</b>\n<size=14>{kind} · {skill.CooldownSeconds:0.#} s</size>\n<size=13>{info}</size>";
+            var extra = 0f;
+            if (skill.Id == Game.Shared.Monsters.ThreatRules.TauntSkillId)
+            {
+                text += $"\n<size=13><color=#ffd27a>{Loc.T("skill.taunt_hint")}</color></size>";
+                extra = 20f;
+            }
             if (GameMode.IsOnline && !CharacterState.SkillUnlocked(index)) text += $"\n<size=14><color=#ff8a7a>{combat.UnlockText(index)}</color></size>";
-            var rect = new Rect(Mathf.Clamp(mouse.x - 160, 10, VirtualWidth - 330), BarTop - 112, 320, 94);
+            var rect = new Rect(Mathf.Clamp(mouse.x - 160, 10, VirtualWidth - 330), BarTop - 112 - extra, 320, 94 + extra);
             UiTheme.Panel(rect, 0.95f);
             GUI.Label(new Rect(rect.x + 10, rect.y + 6, rect.width - 20, rect.height - 12), text, _small);
         }
