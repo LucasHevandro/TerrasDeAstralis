@@ -25,6 +25,7 @@ namespace Game.Shared.Net
 
     public enum RelationActionKind : byte
     {
+        /// <summary>Convida <see cref="SocialCommand.TargetName"/> para a amizade (só vale quando ele aceita).</summary>
         AddFriend = 0,
         RemoveFriend = 1,
         Block = 2,
@@ -32,6 +33,11 @@ namespace Game.Shared.Net
 
         /// <summary>Denuncia <see cref="SocialCommand.TargetName"/>; <see cref="SocialCommand.Text"/> é o motivo.</summary>
         Report = 4,
+
+        /// <summary>Aceita o convite de amizade de <see cref="SocialCommand.TargetName"/>: os dois viram amigos.</summary>
+        AcceptFriend = 5,
+
+        DeclineFriend = 6,
     }
 
     public enum ShopActionKind : byte
@@ -401,6 +407,22 @@ namespace Game.Shared.Net
 
         public static PartyInvite Read(PacketReader r) =>
             new PartyInvite { InviterId = r.ReadInt(), InviterName = r.ReadString(), Seconds = r.ReadFloat() };
+    }
+
+    /// <summary>Alguém pediu amizade: o cliente mostra Aceitar e Recusar até o prazo acabar.</summary>
+    public sealed class FriendInvite : INetMessage
+    {
+        public MessageType Type => MessageType.FriendInvite;
+        public string InviterName = "";
+        public float Seconds;
+
+        public void Write(PacketWriter w)
+        {
+            w.WriteString(InviterName);
+            w.WriteFloat(Seconds);
+        }
+
+        public static FriendInvite Read(PacketReader r) => new FriendInvite { InviterName = r.ReadString(), Seconds = r.ReadFloat() };
     }
 
     /// <summary>

@@ -45,6 +45,9 @@ namespace Game.Shared.Social
     public static class RelationRules
     {
         public const int MaxFriends = 50;
+
+        /// <summary>Tempo para aceitar um convite de amizade.</summary>
+        public const float FriendInviteSeconds = 60f;
         public const int MaxBlocked = 100;
         public const int MaxReportReason = 200;
 

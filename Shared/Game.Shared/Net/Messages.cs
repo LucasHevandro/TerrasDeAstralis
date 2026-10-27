@@ -68,6 +68,7 @@ namespace Game.Shared.Net
         PvpState = 128,
         EntityLook = 129,
         MarketState = 130,
+        FriendInvite = 131,
     }
 
     /// <summary>Uma mensagem do protocolo. Cada tipo sabe se escrever; a leitura fica em <see cref="NetCodec"/>.</summary>
@@ -77,10 +78,13 @@ namespace Game.Shared.Net
         void Write(PacketWriter writer);
     }
 
-    /// <summary>Versão do protocolo. Subir sempre que uma mensagem mudar de formato ou de sentido (20: itens na barra).</summary>
+    /// <summary>
+    /// Versão do protocolo. Subir sempre que uma mensagem mudar de formato ou de sentido (20: itens na barra; 21: convite
+    /// de amizade, ameaça e descanso na fogueira).
+    /// </summary>
     public static class Protocol
     {
-        public const int Version = 20;
+        public const int Version = 21;
         public const int DefaultPort = 7777;
     }
 
@@ -824,6 +828,7 @@ namespace Game.Shared.Net
                 MessageType.EntityLook => EntityLook.Read(reader),
                 MessageType.MarketCommand => MarketCommand.Read(reader),
                 MessageType.MarketState => MarketState.Read(reader),
+                MessageType.FriendInvite => FriendInvite.Read(reader),
                 _ => throw new ProtocolException($"Tipo de mensagem desconhecido: {(ushort)type}."),
             };
             // Hello de outra versão pode ter mais campos: lê só a versão para o servidor poder recusar com motivo.
