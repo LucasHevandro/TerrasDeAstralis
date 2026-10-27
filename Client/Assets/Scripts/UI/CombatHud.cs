@@ -159,6 +159,16 @@ namespace Game.Client.UI
             var combo = combat.Combo;
             var rect = new Rect(VirtualWidth / 2 - 330, VirtualHeight - 300, 660, 34);
 
+            if (combo.State != ComboState.Active && (combat.Resting || (combat.NearRestFire && combat.Target == null)))
+            {
+                // Na fogueira da praça, o lugar do aviso do combo mostra como sentar (ou que está descansando).
+                var key = KeyBindings.Label(GameAction.Rest);
+                GUI.color = new Color(1f, 0.82f, 0.55f);
+                GUI.Label(new Rect(rect.x, rect.y, rect.width, rect.height),
+                    combat.Resting ? Loc.T("rest.resting", key) : Loc.T("rest.hint", key), _center);
+                GUI.color = Color.white;
+                return;
+            }
             if (combo.State != ComboState.Active)
             {
                 var cost = combo.Config.ActivationSpCost;

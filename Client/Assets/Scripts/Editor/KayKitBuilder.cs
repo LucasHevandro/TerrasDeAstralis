@@ -352,6 +352,20 @@ namespace Game.Client.Editor
             Quick(toDodge, 0.04f);
             Leave(dodge, locomotion, 0.9f);
 
+            // Sentado na fogueira: o pacote não tem pose de sentar; o PickUp parado no meio dá a pose agachada.
+            controller.AddParameter("Resting", AnimatorControllerParameterType.Bool);
+            var rest = machine.AddState("Sentado");
+            rest.motion = Clip("General", "PickUp");
+            rest.speed = 0f;
+            rest.cycleOffset = 0.45f;
+            var toRest = locomotion.AddTransition(rest);
+            toRest.AddCondition(AnimatorConditionMode.If, 0, "Resting");
+            toRest.AddCondition(AnimatorConditionMode.IfNot, 0, "Dead");
+            Quick(toRest, 0.35f);
+            var standUp = rest.AddTransition(locomotion);
+            standUp.AddCondition(AnimatorConditionMode.IfNot, 0, "Resting");
+            Quick(standUp, 0.25f);
+
             var death = machine.AddState("Morte");
             death.motion = dying;
             var toDeath = machine.AddAnyStateTransition(death);

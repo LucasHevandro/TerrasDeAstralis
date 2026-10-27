@@ -15,7 +15,7 @@ namespace Game.Client.UI
         Skill1, Skill2, Skill3, Skill4, Skill5, Skill6, Skill7, Skill8, Skill9, Skill10,
         StartCombo, Finisher, Awakening, Pickup, NextTarget, Talk,
         Inventory, Attributes, QuestLog, Friends, Map, Options,
-        Skills, Progress, Character,
+        Skills, Progress, Character, Rest,
     }
 
     /// <summary>
@@ -39,7 +39,7 @@ namespace Game.Client.UI
             [GameAction.Inventory] = Key.I, [GameAction.Attributes] = Key.C, [GameAction.QuestLog] = Key.J,
             [GameAction.Friends] = Key.O, [GameAction.Map] = Key.M, [GameAction.Options] = Key.F10,
             [GameAction.Skills] = Key.K, [GameAction.Progress] = Key.L,
-            [GameAction.Character] = Key.P,
+            [GameAction.Character] = Key.P, [GameAction.Rest] = Key.X,
         };
 
         private static readonly Dictionary<GameAction, Key> Current = new Dictionary<GameAction, Key>(Defaults);

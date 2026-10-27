@@ -15,6 +15,7 @@ namespace Game.Client.Fx
         private static readonly int AttackId = Animator.StringToHash("Attack");
         private static readonly int AttackKindId = Animator.StringToHash("AttackKind");
         private static readonly int AttackSpeedId = Animator.StringToHash("AttackSpeed");
+        private static readonly int RestingId = Animator.StringToHash("Resting");
 
         private readonly HashSet<int> _parameters = new HashSet<int>();
         private Animator _animator;
@@ -24,6 +25,17 @@ namespace Game.Client.Fx
 
         /// <summary>Morto (o objeto do jogo avisa; o modelo pode ter uma pose de queda).</summary>
         public bool Dead { get; set; }
+
+        /// <summary>Sentado na fogueira (pose agachada; andar levanta).</summary>
+        public bool Resting { get; set; }
+
+        /// <summary>Marca sentado ou de pé no modelo filho de <paramref name="owner"/>.</summary>
+        public static void SetResting(Component owner, bool resting)
+        {
+            if (owner == null) return;
+            var visual = owner.GetComponentInChildren<VisualAnimator>(true);
+            if (visual != null) visual.Resting = resting;
+        }
 
         /// <summary>Dispara um trigger (Attack, Hit, Dodge) no modelo filho de <paramref name="owner"/>, se houver.</summary>
         public static void Trigger(Component owner, string trigger)
@@ -87,6 +99,7 @@ namespace Game.Client.Fx
             if (_animator == null) return;
             if (_parameters.Contains(SpeedId)) _animator.SetFloat(SpeedId, _speed);
             if (_parameters.Contains(DeadId)) _animator.SetBool(DeadId, Dead);
+            if (_parameters.Contains(RestingId)) _animator.SetBool(RestingId, Resting && !Dead);
         }
 
         private Transform Anchor => transform.parent != null ? transform.parent : transform;

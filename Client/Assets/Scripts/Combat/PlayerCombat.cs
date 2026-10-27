@@ -263,7 +263,41 @@ namespace Game.Client.Combat
             for (var key = 0; key < Game.Shared.Progression.SkillTraining.HotbarRow; key++)
                 if (KeyBindings.Pressed(GameAction.Skill1 + key)) RequestHotbar(alt ? key + Game.Shared.Progression.SkillTraining.HotbarRow : key);
             if (KeyBindings.Pressed(GameAction.Awakening) && Online) NetworkSession.Instance.Send(new Msg.ActivateAwakening());
-            if (GameSettings.AutoAttack) TryAutoAttack(now);
+            if (KeyBindings.Pressed(GameAction.Rest) && Online) ToggleRest();
+            // Andou ou entrou em combo: levanta (o servidor faz o mesmo do lado dele).
+            if (Resting && ((transform.position - _restAt).sqrMagnitude > 0.09f || Combo.State == ComboState.Active)) SetResting(false, send: false);
+            if (GameSettings.AutoAttack && !Resting) TryAutoAttack(now);
+        }
+
+        /// <summary>Sentado na fogueira da vila (regenera vida, MP e SP no servidor).</summary>
+        public bool Resting { get; private set; }
+
+        private Vector3 _restAt;
+
+        /// <summary>Perto o bastante da fogueira da praça para sentar.</summary>
+        public bool NearRestFire => Online && RestRules.InRange(transform.position.x, transform.position.z);
+
+        private void ToggleRest()
+        {
+            if (Resting)
+            {
+                SetResting(false, send: true);
+                return;
+            }
+            if (!NearRestFire)
+            {
+                ShowMessage(Loc.T("rest.too_far"));
+                return;
+            }
+            SetResting(true, send: true);
+        }
+
+        private void SetResting(bool resting, bool send)
+        {
+            Resting = resting;
+            _restAt = transform.position;
+            Fx.VisualAnimator.SetResting(this, resting);
+            if (send) NetworkSession.Instance.Send(new Msg.SetResting { Resting = resting });
         }
 
         /// <summary>
@@ -409,6 +443,7 @@ namespace Game.Client.Combat
         private void UseSkill(int index, double now)
         {
             if (index >= skills.Count) return;
+            if (Resting) SetResting(false, send: false); // atacar levanta (o servidor também)
             var skill = skills[index];
             if (Online && !CharacterState.SkillUnlocked(index))
             {
@@ -697,6 +732,7 @@ namespace Game.Client.Combat
         {
             IsDead = true;
             _respawnAt = float.PositiveInfinity;
+            if (Resting) SetResting(false, send: false);
             if (Combo.State == ComboState.Active) Combo.Cancel();
             _selector.Select(null);
             SoundPlayer.Play(SoundId.Miss, 1f, 0f);

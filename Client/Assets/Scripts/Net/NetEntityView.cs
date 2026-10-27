@@ -99,6 +99,9 @@ namespace Game.Client.Net
                 if (dead && _ring != null) _ring.SetActive(false);
             }
 
+            // Outro jogador sentado na fogueira.
+            if (Kind == EntityKind.Player) Fx.VisualAnimator.SetResting(this, (state.Flags & EntityState.FlagResting) != 0);
+
             var windUp = (state.Flags & EntityState.FlagWindUp) != 0;
             if (windUp && !_windUp)
             {

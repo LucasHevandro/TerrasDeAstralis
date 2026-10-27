@@ -30,6 +30,65 @@ namespace Game.Client.World
                 VisualCatalog.Spawn("dungeon", "braseiro_arena", camp);
                 Fire(camp, new Vector3(0, 1.1f, 0), particle);
             }
+            RestFire(particle);
+        }
+
+        /// <summary>
+        /// Fogueira de descanso no centro da praça (<see cref="RestRules"/>): anel de pedras, lenha cruzada e troncos em volta
+        /// para sentar. O próprio fogo tem colisão (ninguém fica dentro); os troncos não, para dar para sentar junto.
+        /// </summary>
+        private void RestFire(Material particle)
+        {
+            var camp = new GameObject("Fogueira de descanso").transform;
+            camp.SetParent(transform, false);
+            camp.position = new Vector3(RestRules.FireX, Ground.HeightAt(RestRules.FireX, RestRules.FireZ), RestRules.FireZ);
+            var shader = Shader.Find("Universal Render Pipeline/Lit");
+            Material Mat(Color color)
+            {
+                var material = new Material(shader) { color = color };
+                if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", 0.1f);
+                return material;
+            }
+            var stone = Mat(new Color(0.45f, 0.43f, 0.4f));
+            var wood = Mat(new Color(0.42f, 0.27f, 0.15f));
+            var bark = Mat(new Color(0.3f, 0.2f, 0.12f));
+
+            GameObject Piece(PrimitiveType type, Material material, Vector3 position, Quaternion rotation, Vector3 scale)
+            {
+                var piece = GameObject.CreatePrimitive(type);
+                Destroy(piece.GetComponent<Collider>());
+                piece.transform.SetParent(camp, false);
+                piece.transform.localPosition = position;
+                piece.transform.localRotation = rotation;
+                piece.transform.localScale = scale;
+                piece.GetComponent<Renderer>().sharedMaterial = material;
+                return piece;
+            }
+
+            // Anel de pedras.
+            for (var i = 0; i < 12; i++)
+            {
+                var angle = i * Mathf.PI * 2f / 12f;
+                var size = 0.32f + (i % 3) * 0.05f;
+                Piece(PrimitiveType.Sphere, stone, new Vector3(Mathf.Cos(angle) * 0.95f, 0.08f, Mathf.Sin(angle) * 0.95f),
+                    Quaternion.Euler(0, i * 37f, 0), new Vector3(size, size * 0.6f, size));
+            }
+            // Lenha cruzada no meio.
+            for (var i = 0; i < 4; i++)
+                Piece(PrimitiveType.Cylinder, wood, new Vector3(0, 0.15f, 0), Quaternion.Euler(70, i * 45f, 0), new Vector3(0.14f, 0.45f, 0.14f));
+            // Troncos deitados em volta, para sentar.
+            for (var i = 0; i < 6; i++)
+            {
+                var angle = (i * 60f + 30f) * Mathf.Deg2Rad;
+                var position = new Vector3(Mathf.Cos(angle) * 3.3f, 0.2f, Mathf.Sin(angle) * 3.3f);
+                Piece(PrimitiveType.Cylinder, bark, position, Quaternion.Euler(0, -i * 60f - 30f, 90), new Vector3(0.4f, 0.75f, 0.4f));
+            }
+
+            var block = camp.gameObject.AddComponent<CapsuleCollider>();
+            block.radius = RestRules.FireRadius;
+            block.height = 2f;
+            block.center = new Vector3(0, 1f, 0);
+            Fire(camp, new Vector3(0, 0.25f, 0), particle);
         }
 
         /// <summary>Fogo do braseiro (o mesmo do construtor da arena) e uma luz quente.</summary>
