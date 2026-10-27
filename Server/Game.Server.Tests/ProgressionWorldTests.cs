@@ -385,6 +385,54 @@ public class ProgressionWorldTests
     }
 
     [Fact]
+    public void Monstro_prefere_a_lamina_e_so_troca_de_alvo_com_folga()
+    {
+        var (world, _, blade) = Setup(Dummy(hp: 1_000_000));
+        var monster = world.Monsters.Single();
+        var mage = world.AddPlayer("", 0, null,
+            AuthService.InitialCharacter(CharacterClass.Arcanist, NewUid) with { Id = 8, AccountId = 2, Name = "Bia" });
+        mage.Movement.Teleport(0, 0, 0);
+
+        // A Bia bate primeiro: o monstro vai nela.
+        world.Handle(mage.Id, new UseSkill { Slot = 0, TargetId = monster.Id }, 1);
+        world.Tick(1.1);
+        Assert.Equal(mage.Id, monster.AggroPlayerId);
+
+        // Um golpe da Lâmina vale o dobro em ameaça: passa a Bia (que vale 0,8) com folga, e o monstro troca.
+        world.Handle(blade.Id, new UseSkill { Slot = 0, TargetId = monster.Id }, 2);
+        world.Tick(2.1);
+        Assert.Equal(blade.Id, monster.AggroPlayerId);
+        Assert.True(monster.Threat[blade.Id] > monster.Threat[mage.Id]);
+
+        // Um pouco mais de ameaça não basta para tirar o alvo: precisa passar de 110% (perto) ou 130% (longe).
+        monster.Threat[mage.Id] = monster.Threat[blade.Id] * 1.05;
+        world.Tick(2.2);
+        Assert.Equal(blade.Id, monster.AggroPlayerId);
+        monster.Threat[mage.Id] = monster.Threat[blade.Id] * 1.2;
+        world.Tick(2.3);
+        Assert.Equal(mage.Id, monster.AggroPlayerId);
+    }
+
+    [Fact]
+    public void Giro_de_lamina_provoca_e_puxa_o_monstro()
+    {
+        var (world, _, blade) = Setup(Dummy(hp: 1_000_000));
+        var monster = world.Monsters.Single();
+        var mage = world.AddPlayer("", 0, null,
+            AuthService.InitialCharacter(CharacterClass.Arcanist, NewUid) with { Id = 8, AccountId = 2, Name = "Bia" });
+        mage.Movement.Teleport(0, 0, 0);
+        blade.LearnedSkills.Add(ThreatRules.TauntSkillId);
+        monster.Threat[mage.Id] = 50_000; // a Bia já irritou muito
+
+        var giro = blade.Skills.Select((s, i) => (s, i)).First(x => x.s.Id == ThreatRules.TauntSkillId).i;
+        world.Handle(blade.Id, new UseSkill { Slot = (byte)giro, TargetId = monster.Id }, 1);
+        world.Tick(1.1);
+
+        Assert.Equal(blade.Id, monster.AggroPlayerId);
+        Assert.True(monster.Threat[blade.Id] >= 50_000 * ThreatRules.TauntMargin);
+    }
+
+    [Fact]
     public void Despertar_ativa_com_barra_cheia_e_aumenta_o_dano()
     {
         var (world, outbox, player) = Setup(Dummy(hp: 100_000));

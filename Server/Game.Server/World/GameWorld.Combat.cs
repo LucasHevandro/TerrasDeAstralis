@@ -278,7 +278,7 @@ public sealed partial class GameWorld
         var dealt = monster.Invulnerable ? 0 : -monster.Hp.Add(-hit.Amount);
         player.LastCombatAt = now;
         monster.DamageBy[player.Id] = monster.DamageBy.GetValueOrDefault(player.Id) + dealt;
-        monster.AggroPlayerId = player.Id;
+        AddThreat(monster, player, dealt, source);
         if (monster.Data.Behavior == MonsterBehavior.Pack && !monster.Brain.Provoked) CallPack(monster, player);
         monster.Brain.Provoke();
 
@@ -346,6 +346,7 @@ public sealed partial class GameWorld
         foreach (var m in _monsters.Values)
         {
             if (m.AggroPlayerId == player.Id) m.AggroPlayerId = 0;
+            m.Threat.Remove(player.Id);
         }
         Notify(player, LT("player.died"), announcement: true);
     }
@@ -414,11 +415,54 @@ public sealed partial class GameWorld
         if (monster.Spawn.IsBoss) TickBoss(monster, target, now);
     }
 
-    /// <summary>Quem o monstro persegue: quem bateu nele por último; se ninguém, o jogador vivo mais perto.</summary>
+    /// <summary>
+    /// Golpe num monstro vira ameaça (dano vezes o fator da classe). A provocação põe quem a usou acima de todos e
+    /// vira o alvo na hora; nos outros golpes, a troca de alvo fica com <see cref="ChooseTarget"/>.
+    /// </summary>
+    private static void AddThreat(ServerMonster monster, ServerPlayer player, int dealt, byte source)
+    {
+        var threat = monster.Threat.GetValueOrDefault(player.Id) + ThreatRules.ForHit(dealt, player.Class);
+        var taunt = source < player.Skills.Count && player.Skills[source].Id == ThreatRules.TauntSkillId;
+        if (taunt)
+        {
+            var top = monster.Threat.Where(t => t.Key != player.Id).Select(t => t.Value).DefaultIfEmpty(0).Max();
+            threat = Math.Max(threat, top * ThreatRules.TauntMargin);
+            monster.AggroPlayerId = player.Id;
+        }
+        monster.Threat[player.Id] = threat;
+        if (monster.AggroPlayerId == 0) monster.AggroPlayerId = player.Id;
+    }
+
+    /// <summary>
+    /// Quem o monstro persegue: o de mais ameaça. Ele só troca de alvo quando alguém passa bem à frente do atual
+    /// (<see cref="ThreatRules.Overtakes"/>). Sem ninguém na tabela, o jogador vivo mais perto.
+    /// </summary>
     private ServerPlayer? ChooseTarget(ServerMonster monster)
     {
-        if (monster.AggroPlayerId != 0 && _players.TryGetValue(monster.AggroPlayerId, out var aggro) && !aggro.IsDead)
-            return aggro;
+        ServerPlayer? Valid(int id) =>
+            id != 0 && _players.TryGetValue(id, out var p) && !p.IsDead && SameInstance(monster, p) ? p : null;
+
+        var current = Valid(monster.AggroPlayerId);
+        ServerPlayer? leader = null;
+        var leaderThreat = double.MinValue;
+        foreach (var (id, threat) in monster.Threat)
+        {
+            if (threat <= leaderThreat || Valid(id) is not { } candidate) continue;
+            leader = candidate;
+            leaderThreat = threat;
+        }
+        if (leader != null && leader != current)
+        {
+            var inMelee = Distance(monster.X, monster.Z, leader.X, leader.Z) <= ThreatRules.MeleeRange;
+            if (current == null || ThreatRules.Overtakes(leaderThreat, monster.Threat.GetValueOrDefault(current.Id), inMelee))
+                current = leader;
+        }
+        if (current != null)
+        {
+            monster.AggroPlayerId = current.Id;
+            return current;
+        }
+        monster.AggroPlayerId = 0;
 
         ServerPlayer? nearest = null;
         var best = float.MaxValue;
@@ -445,6 +489,7 @@ public sealed partial class GameWorld
         {
             if (other == caller || other.IsDead || other.Data.Id != caller.Data.Id || other.InstanceId != caller.InstanceId) continue;
             if (other.Brain.Provoked || !InRange(other.X, other.Z, caller.X, caller.Z, MonsterBehaviors.PackCallRadius)) continue;
+            other.Threat[player.Id] = other.Threat.GetValueOrDefault(player.Id) + ThreatRules.PackPullThreat;
             other.AggroPlayerId = player.Id;
             other.Brain.Provoke();
         }
@@ -476,6 +521,7 @@ public sealed partial class GameWorld
     {
         monster.Hp.Add(monster.Hp.Max);
         monster.DamageBy.Clear();
+        monster.Threat.Clear();
         monster.AggroPlayerId = 0;
         if (monster.Spawn.IsBoss) EndBossPhaseTwo(monster);
     }
@@ -494,6 +540,7 @@ public sealed partial class GameWorld
             : null;
         var helpers = Helpers(monster);
         monster.DamageBy.Clear();
+        monster.Threat.Clear();
         monster.AggroPlayerId = 0;
         if (killer == null) return;
 

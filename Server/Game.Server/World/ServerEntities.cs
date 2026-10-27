@@ -276,8 +276,11 @@ public sealed class ServerMonster
     public float Yaw { get; set; }
     public double RespawnAt { get; set; }
 
-    /// <summary>Jogador que o monstro persegue (quem bateu por último), ou 0.</summary>
+    /// <summary>Jogador que o monstro persegue (o de mais ameaça, ver <see cref="ThreatRules"/>), ou 0.</summary>
     public int AggroPlayerId { get; set; }
+
+    /// <summary>Ameaça de cada jogador contra este monstro (dano vezes o fator da classe, provocação).</summary>
+    public Dictionary<int, double> Threat { get; } = new();
 
     /// <summary>Dano recebido por jogador (quem causou mais dano fica com o XP e o drop).</summary>
     public Dictionary<int, int> DamageBy { get; } = new();

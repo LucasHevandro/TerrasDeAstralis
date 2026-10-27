@@ -182,6 +182,7 @@ public sealed partial class GameWorld
         {
             if (monster.AggroPlayerId == playerId) monster.AggroPlayerId = 0;
             monster.DamageBy.Remove(playerId);
+            monster.Threat.Remove(playerId);
         }
         foreach (var other in _players.Values)
         {
