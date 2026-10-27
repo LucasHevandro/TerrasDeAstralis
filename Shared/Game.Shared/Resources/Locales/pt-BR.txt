@@ -1092,7 +1092,9 @@ skills.learn = Aprender · {0:N0} Alz
 skills.learn_free = Aprender
 skills.need = <color=#ff8a7a>{0}</color>
 skills.your_alz = Seu Alz: <b>{0:N0}</b>
-skills.bar_hint = Arraste da barra para fora para tirar uma skill; arraste entre as casas para trocar de lugar.
+skills.bar_hint = Arraste da barra para fora para tirar uma skill; arraste entre as casas para trocar de lugar. Poções de vida também vão para a barra: arraste do inventário.
+hotbar.no_item = Você não tem {0} na bolsa.
+hotbar.only_potions = Só poções de vida vão para a barra de atalhos.
 options.quit = Sair do jogo
 options.switch_character = Trocar de personagem
 options.quit_title = Sair do jogo?

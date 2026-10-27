@@ -77,10 +77,10 @@ namespace Game.Shared.Net
         void Write(PacketWriter writer);
     }
 
-    /// <summary>Versão do protocolo. Subir sempre que uma mensagem mudar de formato.</summary>
+    /// <summary>Versão do protocolo. Subir sempre que uma mensagem mudar de formato ou de sentido (20: itens na barra).</summary>
     public static class Protocol
     {
-        public const int Version = 19;
+        public const int Version = 20;
         public const int DefaultPort = 7777;
     }
 

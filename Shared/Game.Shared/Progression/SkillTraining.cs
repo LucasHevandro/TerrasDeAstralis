@@ -21,6 +21,30 @@ namespace Game.Shared.Progression
         /// <summary>Casa vazia na barra.</summary>
         public const byte Empty = 255;
 
+        /// <summary>
+        /// Valores a partir daqui são itens (ItemBase + posição em <see cref="HotbarItems"/>), não skills. A casa usa o
+        /// item da bolsa pelo mesmo comando do botão direito.
+        /// </summary>
+        public const byte ItemBase = 200;
+
+        /// <summary>Itens que podem ir para a barra: as poções de vida.</summary>
+        public static readonly string[] HotbarItems = { "pocao_hp_p", "pocao_hp_m" };
+
+        private const string ItemPrefix = "item:";
+
+        /// <summary>O valor da casa é um item da barra?</summary>
+        public static bool IsItem(byte value) => value >= ItemBase && value - ItemBase < HotbarItems.Length;
+
+        /// <summary>Id do item da casa (nulo se a casa não tem item).</summary>
+        public static string? ItemOf(byte value) => IsItem(value) ? HotbarItems[value - ItemBase] : null;
+
+        /// <summary>Valor da casa para o item (Empty se o item não pode ir para a barra).</summary>
+        public static byte ItemValue(string itemId)
+        {
+            var index = Array.IndexOf(HotbarItems, itemId);
+            return index < 0 ? Empty : (byte)(ItemBase + index);
+        }
+
         /// <summary>Preço no mestre (as skills de nível 1 já vêm com o personagem). Números provisórios até a planilha.</summary>
         public static long PriceFor(ClassSkill skill) =>
             skill.RequiredLevel <= 1 ? 0 : 40L * skill.RequiredLevel * skill.RequiredLevel;
@@ -58,7 +82,8 @@ namespace Game.Shared.Progression
         }
 
         /// <summary>
-        /// Arruma uma barra vinda de fora (cliente ou banco): tamanho certo, só skills aprendidas, sem repetir.
+        /// Arruma uma barra vinda de fora (cliente ou banco): tamanho certo, só skills aprendidas e itens da lista, sem
+        /// repetir.
         /// </summary>
         public static byte[] Sanitize(IReadOnlyList<byte> slots, IReadOnlyList<ClassSkill> skills, ICollection<string> learned)
         {
@@ -67,7 +92,8 @@ namespace Game.Shared.Progression
             for (var i = 0; i < HotbarSize && i < slots.Count; i++)
             {
                 var index = slots[i];
-                if (index == Empty || index >= skills.Count || !learned.Contains(skills[index].Skill.Id) || !used.Add(index)) continue;
+                var valid = IsItem(index) || (index < skills.Count && learned.Contains(skills[index].Skill.Id));
+                if (!valid || !used.Add(index)) continue;
                 bar[i] = index;
             }
             return bar;
@@ -81,16 +107,23 @@ namespace Game.Shared.Progression
             if (free >= 0) bar[free] = index;
         }
 
-        /// <summary>Barra para o banco: o id de cada casa (vazio = casa vazia), separados por vírgula.</summary>
+        /// <summary>
+        /// Barra para o banco: o id de cada casa (vazio = casa vazia; "item:id" = item), separados por vírgula.
+        /// </summary>
         public static IReadOnlyList<string> ToIds(byte[] bar, IReadOnlyList<ClassSkill> skills) =>
-            bar.Select(i => i == Empty || i >= skills.Count ? "" : skills[i].Skill.Id).ToList();
+            bar.Select(i => IsItem(i) ? ItemPrefix + ItemOf(i) : i == Empty || i >= skills.Count ? "" : skills[i].Skill.Id).ToList();
 
-        /// <summary>Barra do banco (ids) de volta para índices da classe.</summary>
+        /// <summary>Barra do banco (ids) de volta para índices da classe e itens.</summary>
         public static byte[] FromIds(IReadOnlyList<string> ids, IReadOnlyList<ClassSkill> skills)
         {
             var bar = Enumerable.Repeat(Empty, HotbarSize).ToArray();
             for (var i = 0; i < HotbarSize && i < ids.Count; i++)
             {
+                if (ids[i].StartsWith(ItemPrefix, StringComparison.Ordinal))
+                {
+                    bar[i] = ItemValue(ids[i].Substring(ItemPrefix.Length));
+                    continue;
+                }
                 for (var s = 0; s < skills.Count; s++)
                     if (skills[s].Skill.Id == ids[i]) bar[i] = (byte)s;
             }
