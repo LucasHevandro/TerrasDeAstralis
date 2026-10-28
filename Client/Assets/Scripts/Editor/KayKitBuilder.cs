@@ -358,11 +358,11 @@ namespace Game.Client.Editor
             // Sentar na fogueira com a sequência completa: sentar, descansar sentado e levantar.
             controller.AddParameter("Resting", AnimatorControllerParameterType.Bool);
             var sitDown = machine.AddState("Sentando");
-            sitDown.motion = Clip("Simulation", "Sit_Chair_Down");
+            sitDown.motion = Clip("Simulation", "Sit_Floor_Down");
             var rest = machine.AddState("Sentado");
-            rest.motion = Clip("Simulation", "Sit_Chair_Idle");
+            rest.motion = Clip("Simulation", "Sit_Floor_Idle");
             var standUp = machine.AddState("Levantando");
-            standUp.motion = Clip("Simulation", "Sit_Chair_StandUp");
+            standUp.motion = Clip("Simulation", "Sit_Floor_StandUp");
 
             var toSit = locomotion.AddTransition(sitDown);
             toSit.AddCondition(AnimatorConditionMode.If, 0, "Resting");
