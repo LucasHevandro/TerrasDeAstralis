@@ -26,7 +26,7 @@ namespace Game.Client.Fx
         /// <summary>Morto (o objeto do jogo avisa; o modelo pode ter uma pose de queda).</summary>
         public bool Dead { get; set; }
 
-        /// <summary>Sentado na fogueira (pose agachada; andar levanta).</summary>
+        /// <summary>Sentado na fogueira; andar inicia a animação de levantar.</summary>
         public bool Resting { get; set; }
 
         /// <summary>Marca sentado ou de pé no modelo filho de <paramref name="owner"/>.</summary>

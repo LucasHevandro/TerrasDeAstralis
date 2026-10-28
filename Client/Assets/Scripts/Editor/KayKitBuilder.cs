@@ -126,20 +126,23 @@ namespace Game.Client.Editor
                     changed = true;
                 }
                 var isAnimation = path.StartsWith(Animations);
-                importer.importAnimation = isAnimation;
+                if (importer.importAnimation != isAnimation)
+                {
+                    importer.importAnimation = isAnimation;
+                    changed = true;
+                }
                 if (isAnimation)
                 {
                     var clips = importer.clipAnimations.Length > 0 ? importer.clipAnimations : importer.defaultClipAnimations;
                     foreach (var clip in clips)
                     {
                         var loop = Looping.Any(prefix => clip.name.StartsWith(prefix) || clip.name.Contains("_Idle"));
-                        if (clip.loopTime != loop) changed = true;
+                        if (clip.loopTime != loop || !clip.lockRootPositionXZ || !clip.keepOriginalPositionXZ) changed = true;
                         clip.loopTime = loop;
                         clip.lockRootPositionXZ = true;
                         clip.keepOriginalPositionXZ = true;
                     }
                     importer.clipAnimations = clips;
-                    changed = true;
                 }
                 if (changed) importer.SaveAndReimport();
             }
@@ -352,19 +355,52 @@ namespace Game.Client.Editor
             Quick(toDodge, 0.04f);
             Leave(dodge, locomotion, 0.9f);
 
-            // Sentado na fogueira: o pacote não tem pose de sentar; o PickUp parado no meio dá a pose agachada.
+            // Sentar na fogueira com a sequência completa: sentar, descansar sentado e levantar.
             controller.AddParameter("Resting", AnimatorControllerParameterType.Bool);
+            var sitDown = machine.AddState("Sentando");
+            sitDown.motion = Clip("Simulation", "Sit_Chair_Down");
             var rest = machine.AddState("Sentado");
-            rest.motion = Clip("General", "PickUp");
-            rest.speed = 0f;
-            rest.cycleOffset = 0.45f;
-            var toRest = locomotion.AddTransition(rest);
-            toRest.AddCondition(AnimatorConditionMode.If, 0, "Resting");
-            toRest.AddCondition(AnimatorConditionMode.IfNot, 0, "Dead");
-            Quick(toRest, 0.35f);
-            var standUp = rest.AddTransition(locomotion);
-            standUp.AddCondition(AnimatorConditionMode.IfNot, 0, "Resting");
-            Quick(standUp, 0.25f);
+            rest.motion = Clip("Simulation", "Sit_Chair_Idle");
+            var standUp = machine.AddState("Levantando");
+            standUp.motion = Clip("Simulation", "Sit_Chair_StandUp");
+
+            var toSit = locomotion.AddTransition(sitDown);
+            toSit.AddCondition(AnimatorConditionMode.If, 0, "Resting");
+            toSit.AddCondition(AnimatorConditionMode.IfNot, 0, "Dead");
+            Quick(toSit, 0.15f);
+
+            var finishSit = sitDown.AddTransition(rest);
+            finishSit.AddCondition(AnimatorConditionMode.If, 0, "Resting");
+            finishSit.hasExitTime = true;
+            finishSit.exitTime = 0.9f;
+            finishSit.duration = 0.12f;
+            finishSit.hasFixedDuration = true;
+
+            // Se o jogador andar ou cancelar enquanto senta, completa o movimento levantando.
+            var cancelSit = sitDown.AddTransition(standUp);
+            cancelSit.AddCondition(AnimatorConditionMode.IfNot, 0, "Resting");
+            cancelSit.hasExitTime = true;
+            cancelSit.exitTime = 0.9f;
+            cancelSit.duration = 0.08f;
+            cancelSit.hasFixedDuration = true;
+
+            var leaveSeat = rest.AddTransition(standUp);
+            leaveSeat.AddCondition(AnimatorConditionMode.IfNot, 0, "Resting");
+            Quick(leaveSeat, 0.12f);
+
+            var finishStand = standUp.AddTransition(locomotion);
+            finishStand.AddCondition(AnimatorConditionMode.IfNot, 0, "Resting");
+            finishStand.hasExitTime = true;
+            finishStand.exitTime = 0.9f;
+            finishStand.duration = 0.12f;
+            finishStand.hasFixedDuration = true;
+
+            var sitAgain = standUp.AddTransition(sitDown);
+            sitAgain.AddCondition(AnimatorConditionMode.If, 0, "Resting");
+            sitAgain.hasExitTime = true;
+            sitAgain.exitTime = 0.9f;
+            sitAgain.duration = 0.12f;
+            sitAgain.hasFixedDuration = true;
 
             var death = machine.AddState("Morte");
             death.motion = dying;

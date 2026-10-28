@@ -294,10 +294,21 @@ namespace Game.Client.Combat
 
         private void SetResting(bool resting, bool send)
         {
+            if (resting) FaceRestFire();
             Resting = resting;
             _restAt = transform.position;
             Fx.VisualAnimator.SetResting(this, resting);
             if (send) NetworkSession.Instance.Send(new Msg.SetResting { Resting = resting });
+        }
+
+        /// <summary>Vira o personagem para a fogueira sem alterar a posição validada pelo servidor.</summary>
+        private void FaceRestFire()
+        {
+            var offset = new Vector2(transform.position.x - RestRules.FireX, transform.position.z - RestRules.FireZ);
+            var angle = offset.sqrMagnitude > 0.01f ? Mathf.Atan2(offset.y, offset.x) * Mathf.Rad2Deg : 30f;
+            var radians = angle * Mathf.Deg2Rad;
+            var outward = new Vector3(Mathf.Cos(radians), 0f, Mathf.Sin(radians));
+            transform.rotation = Quaternion.LookRotation(-outward);
         }
 
         /// <summary>

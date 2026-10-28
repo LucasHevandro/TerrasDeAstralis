@@ -163,9 +163,12 @@ namespace Game.Client.UI
             if (pickup == null) return;
             var color = ColorUtility.ToHtmlStringRGB(LootPickup.ColorFor(pickup.Drop.Rarity));
             var name = pickup.Drop.Quantity > 1 ? $"{pickup.Drop.Name} x{pickup.Drop.Quantity}" : pickup.Drop.Name;
+            var key = KeyBindings.Label(GameAction.Pickup);
             var rect = new Rect(VirtualWidth / 2 - 330, VirtualHeight - 336, 660, 30);
-            ShadowLabel(rect, Loc.T("hud.pickup_hint", KeyBindings.Label(GameAction.Pickup), $"<color=#{color}><b>{name}</b></color>"),
-                _small.WithCenter(), Color.white, 1f);
+            var text = Loc.T("hud.pickup_hint", key, $"<color=#{color}><b>{name}</b></color>");
+            // A sombra não pode manter o <color> do nome: a cor rica sobrepõe GUI.color e desenha uma cópia colorida.
+            var shadow = Loc.T("hud.pickup_hint", key, name);
+            ShadowLabel(rect, text, _small.WithCenter(), Color.white, 1f, shadow);
         }
 
         private void DrawComboBar()
@@ -557,10 +560,10 @@ namespace Game.Client.UI
         }
 
         /// <summary>Texto com sombra escura, legível sobre qualquer fundo.</summary>
-        private static void ShadowLabel(Rect rect, string text, GUIStyle style, Color color, float alpha)
+        private static void ShadowLabel(Rect rect, string text, GUIStyle style, Color color, float alpha, string shadowText = null)
         {
             GUI.color = new Color(0, 0, 0, alpha * 0.85f);
-            GUI.Label(new Rect(rect.x + 3, rect.y + 3, rect.width, rect.height), text, style);
+            GUI.Label(new Rect(rect.x + 3, rect.y + 3, rect.width, rect.height), shadowText ?? text, style);
             GUI.color = new Color(color.r, color.g, color.b, alpha);
             GUI.Label(rect, text, style);
             GUI.color = Color.white;

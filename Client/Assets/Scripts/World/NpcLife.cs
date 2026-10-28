@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Game.Client.Fx;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Game.Client.World
 {
@@ -68,10 +69,17 @@ namespace Game.Client.World
         private readonly List<Walker> _walkers = new List<Walker>();
         private System.Random _random;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void Boot()
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void RegisterSceneLoad()
         {
-            // A tela de entrada recarrega a cena: um grupo de moradores por cena.
+            // ConnectMenu recarrega a cena ao entrar no jogo. RuntimeInitializeOnLoadMethod roda só na inicialização
+            // do aplicativo; assinar o evento recria os moradores depois de cada recarga.
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
+        private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
             if (FindAnyObjectByType<VillageLife>() != null) return;
             new GameObject("Moradores").AddComponent<VillageLife>();
         }

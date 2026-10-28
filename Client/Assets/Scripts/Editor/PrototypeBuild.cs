@@ -35,6 +35,9 @@ namespace Game.Client.Editor
         [MenuItem("Protótipo/Gerar build Windows")]
         public static void BuildWindows()
         {
+            // Gera os controladores e prefabs KayKit antes do build para incluir animações e visuais recém-adicionados.
+            KayKitBuilder.Build();
+
             // Jogo online: continua rodando sem foco (várias janelas abertas para teste, alt-tab durante a luta).
             PlayerSettings.runInBackground = true;
             GameIcon.Apply();

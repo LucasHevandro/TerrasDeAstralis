@@ -1,6 +1,7 @@
 using Game.Client.Fx;
 using Game.Shared.World;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Game.Client.World
 {
@@ -10,10 +11,17 @@ namespace Game.Client.World
     /// </summary>
     public sealed class RespawnCamps : MonoBehaviour
     {
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        private static void Boot()
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void RegisterSceneLoad()
         {
-            // A tela de entrada recarrega a cena: um grupo de fogueiras por cena.
+            // ConnectMenu recarrega a cena ao entrar no jogo. RuntimeInitializeOnLoadMethod roda só na inicialização
+            // do aplicativo; assinar o evento também recria as fogueiras depois de cada recarga.
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+            SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
+        private static void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
             if (FindAnyObjectByType<RespawnCamps>() != null) return;
             new GameObject("Fogueiras de retorno").AddComponent<RespawnCamps>();
         }
@@ -35,7 +43,7 @@ namespace Game.Client.World
 
         /// <summary>
         /// Fogueira de descanso no centro da praça (<see cref="RestRules"/>): anel de pedras, lenha cruzada e troncos em volta
-        /// para sentar. O próprio fogo tem colisão (ninguém fica dentro); os troncos não, para dar para sentar junto.
+        /// para sentar. O fogo e os troncos têm colisão; os outros detalhes são decorativos.
         /// </summary>
         private void RestFire(Material particle)
         {
@@ -53,10 +61,10 @@ namespace Game.Client.World
             var wood = Mat(new Color(0.42f, 0.27f, 0.15f));
             var bark = Mat(new Color(0.3f, 0.2f, 0.12f));
 
-            GameObject Piece(PrimitiveType type, Material material, Vector3 position, Quaternion rotation, Vector3 scale)
+            GameObject Piece(PrimitiveType type, Material material, Vector3 position, Quaternion rotation, Vector3 scale, bool hitbox = false)
             {
                 var piece = GameObject.CreatePrimitive(type);
-                Destroy(piece.GetComponent<Collider>());
+                if (!hitbox) Destroy(piece.GetComponent<Collider>());
                 piece.transform.SetParent(camp, false);
                 piece.transform.localPosition = position;
                 piece.transform.localRotation = rotation;
@@ -81,7 +89,7 @@ namespace Game.Client.World
             {
                 var angle = (i * 60f + 30f) * Mathf.Deg2Rad;
                 var position = new Vector3(Mathf.Cos(angle) * 3.3f, 0.2f, Mathf.Sin(angle) * 3.3f);
-                Piece(PrimitiveType.Cylinder, bark, position, Quaternion.Euler(0, -i * 60f - 30f, 90), new Vector3(0.4f, 0.75f, 0.4f));
+                Piece(PrimitiveType.Cylinder, bark, position, Quaternion.Euler(0, -i * 60f - 30f, 90), new Vector3(0.4f, 0.75f, 0.4f), hitbox: true);
             }
 
             var block = camp.gameObject.AddComponent<CapsuleCollider>();
