@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Game.Client.Net;
 using Game.Shared.Accounts;
+using Game.Shared.Loot;
 using Game.Shared.Net;
 using Game.Shared.Social;
 using Game.Shared.Text;
@@ -59,6 +60,9 @@ namespace Game.Client.UI
         private float _inviteUntil;
         private FriendInvite _friendInvite;
         private float _friendInviteUntil;
+
+        // Sorteios do loot do grupo esperando resposta (o mais antigo aparece primeiro).
+        private readonly List<(LootRollStart Roll, float Until)> _rolls = new List<(LootRollStart, float)>();
 
         private GUIStyle _label;
         private GUIStyle _small;
@@ -148,6 +152,9 @@ namespace Game.Client.UI
                     _inviteUntil = Time.unscaledTime + invite.Seconds;
                     AddLine(ChatChannel.System, Loc.T("party.invited_you", invite.InviterName));
                     break;
+                case LootRollStart roll:
+                    _rolls.Add((roll, Time.unscaledTime + roll.Seconds));
+                    break;
                 case FriendInvite friend:
                     _friendInvite = friend;
                     _friendInviteUntil = Time.unscaledTime + friend.Seconds;
@@ -207,6 +214,7 @@ namespace Game.Client.UI
             else GameInput.FieldFocused = false;
             if (PendingInvite != null) DrawInvite();
             else if (PendingFriendInvite != null) DrawFriendInvite();
+            DrawLootRoll();
 
             GUI.matrix = Matrix4x4.identity;
             GUI.color = Color.white;
@@ -475,6 +483,57 @@ namespace Game.Client.UI
             GUI.Label(new Rect(rect.x, rect.y + 44, rect.width, 22), Loc.T("friend.invite_expires", seconds), _small.WithCenter());
             if (GUI.Button(new Rect(rect.x + 60, rect.y + 76, 150, 36), Loc.T("friend.invite_accept"), _button)) AnswerFriend(true);
             if (GUI.Button(new Rect(rect.xMax - 210, rect.y + 76, 150, 36), Loc.T("friend.invite_decline"), _button)) AnswerFriend(false);
+        }
+
+        /// <summary>
+        /// Sorteio do item raro do grupo: o item, quanto tempo falta e Preciso/Quero/Passar ("Preciso" só para quem pode
+        /// usar o item). Fica acima da barra de atalhos; com vários, um de cada vez.
+        /// </summary>
+        private void DrawLootRoll()
+        {
+            _rolls.RemoveAll(r => Time.unscaledTime >= r.Until);
+            if (_rolls.Count == 0) return;
+            var (roll, until) = _rolls[0];
+            var item = Game.Shared.Items.ItemCatalog.Find(roll.ItemId);
+            if (item == null)
+            {
+                _rolls.RemoveAt(0);
+                return;
+            }
+            var rect = new Rect(VirtualWidth / 2 - 250, VirtualHeight - 400, 500, 150);
+            UiTheme.Panel(rect);
+            AddRect(rect);
+
+            var icon = new Rect(rect.x + 16, rect.y + 16, 56, 56);
+            var color = Game.Client.Loot.LootPickup.ColorFor(item.Rarity);
+            var texture = ItemIcons.Get(item.Id);
+            if (texture != null) GUI.DrawTexture(icon, texture, ScaleMode.ScaleToFit);
+            var name = roll.Quantity > 1 ? $"{item.Name} x{roll.Quantity}" : item.Name;
+            GUI.Label(new Rect(rect.x + 84, rect.y + 12, rect.width - 100, 26), $"<b>{Loc.T("loot.roll_title")}</b>", _small);
+            GUI.Label(new Rect(rect.x + 84, rect.y + 36, rect.width - 100, 26),
+                $"<color=#{ColorUtility.ToHtmlStringRGB(color)}><b>{Escape(name)}</b></color>", _label);
+            var seconds = Mathf.CeilToInt(until - Time.unscaledTime);
+            var hint = roll.CanNeed ? Loc.T("loot.roll_expires", seconds) : Loc.T("loot.need_locked");
+            GUI.Label(new Rect(rect.x + 84, rect.y + 62, rect.width - 100, 22), hint, _small);
+            if (_rolls.Count > 1)
+                GUI.Label(new Rect(rect.xMax - 210, rect.y + 12, 196, 22), Loc.T("loot.more_rolls", _rolls.Count - 1), _small.WithAlignment(TextAnchor.UpperRight));
+
+            var buttons = new Rect(rect.x + 16, rect.yMax - 48, (rect.width - 48) / 3, 36);
+            GUI.enabled = roll.CanNeed;
+            if (GUI.Button(buttons, Loc.T("loot.need"), _button)) AnswerRoll(LootChoice.Need);
+            GUI.enabled = true;
+            buttons.x += buttons.width + 8;
+            if (GUI.Button(buttons, Loc.T("loot.greed"), _button)) AnswerRoll(LootChoice.Greed);
+            buttons.x += buttons.width + 8;
+            if (GUI.Button(buttons, Loc.T("loot.pass"), _button)) AnswerRoll(LootChoice.Pass);
+        }
+
+        /// <summary>Responde ao sorteio que está na tela (também usado pelo teste automático).</summary>
+        public void AnswerRoll(LootChoice choice)
+        {
+            if (_rolls.Count == 0) return;
+            _session.Send(new LootRollChoose { RollId = _rolls[0].Roll.RollId, Choice = choice });
+            _rolls.RemoveAt(0);
         }
 
         /// <summary>Responde ao convite de amizade (também usado pelo teste automático).</summary>
