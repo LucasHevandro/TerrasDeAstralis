@@ -44,7 +44,7 @@ $needed = $release.arquivos | ForEach-Object { $_.sha256 + '.gz' } | Sort-Object
 $missing = @($needed | Where-Object { $existing -notcontains $_ })
 Write-Host "Enviando $($missing.Count) de $($needed.Count) arquivos..."
 for ($i = 0; $i -lt $missing.Count; $i += 25) {
-    $chunk = $missing[$i..([Math]::Min($i + 24, $missing.Count - 1))] | ForEach-Object { Join-Path $out "arquivos\$_" }
+    $chunk = @($missing[$i..([Math]::Min($i + 24, $missing.Count - 1))] | ForEach-Object { Join-Path $out "arquivos\$_" })
     scp -q @chunk "${Servidor}:$remote/arquivos/"
     if ($LASTEXITCODE -ne 0) { throw 'Falhou ao enviar os arquivos.' }
 }
