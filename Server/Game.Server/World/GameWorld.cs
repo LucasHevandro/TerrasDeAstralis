@@ -356,11 +356,21 @@ public sealed partial class GameWorld
             player.Yaw = move.Yaw;
             // Andou: levanta da fogueira.
             if (player.Resting && !InRange(player.X, player.Z, player.RestX, player.RestZ, 0.3f)) player.Resting = false;
-            if ((player.DungeonId != 0 && ClampToDungeon(player, now)) || (player.ArenaId != 0 && ClampToArena(player, now)))
+            if ((player.DungeonId != 0 && ClampToDungeon(player, now)) || (player.ArenaId != 0 && ClampToArena(player, now)) ||
+                (player.DungeonId == 0 && player.ArenaId == 0 && ClampToWorld(player, now)))
                 _outbox.Send(player.Id, new PositionCorrection { X = player.X, Z = player.Z });
             return;
         }
         _outbox.Send(player.Id, new PositionCorrection { X = player.X, Z = player.Z });
+    }
+
+    /// <summary>Mundo aberto: passou da borda do mapa, volta para dentro (o cliente também segura, isto é a garantia).</summary>
+    private static bool ClampToWorld(ServerPlayer player, double now)
+    {
+        if (!WorldBounds.InOpenWorld(player.Z) || WorldBounds.Inside(player.X, player.Z)) return false;
+        var (x, z) = WorldBounds.Clamp(player.X, player.Z);
+        player.Movement.Teleport(x, z, now);
+        return true;
     }
 
     /// <summary>Envia o que o jogador enxerga: entidades que apareceram/sumiram, itens e o snapshot do tick.</summary>

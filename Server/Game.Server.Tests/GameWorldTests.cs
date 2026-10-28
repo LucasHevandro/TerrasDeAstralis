@@ -159,6 +159,21 @@ public class GameWorldTests
     }
 
     [Fact]
+    public void Borda_do_mapa_segura_o_jogador_no_mundo_aberto()
+    {
+        var outbox = new FakeOutbox();
+        var world = new GameWorld(outbox, NoMonsters);
+        var player = world.AddPlayer("Ana", 0);
+        player.Movement.Teleport(WorldBounds.MaxX - 0.5f, 0, 0);
+
+        world.Handle(player.Id, new MoveInput { Sequence = 1, X = WorldBounds.MaxX + 2f, Z = 0 }, 1);
+
+        Assert.Equal(WorldBounds.MaxX, player.X, 3);
+        Assert.Contains(outbox.Sent, s => s.PlayerId == player.Id && s.Message is PositionCorrection);
+        Assert.All(WorldContent.Spawns(), s => Assert.True(WorldBounds.Inside(s.CenterX, s.CenterZ), s.Data.Id));
+    }
+
+    [Fact]
     public void Sentado_na_fogueira_recupera_tudo_e_levanta_ao_andar()
     {
         var world = new GameWorld(new FakeOutbox(), NoMonsters);
