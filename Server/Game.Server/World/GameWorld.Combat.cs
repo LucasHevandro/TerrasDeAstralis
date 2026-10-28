@@ -613,15 +613,23 @@ public sealed partial class GameWorld
             Notify(helper, LT("reward.xp_alz", xp, 0));
         }
 
+        // Em grupo (fora do chefe de mundo): comum por vez, raro a sorteio. Sozinho: como antes, do matador.
+        var group = fighters == null && killer.PartyId != 0 && sharing.Count > 1 ? sharing.Where(m => !m.IsDead).ToList() : null;
         for (var i = 0; i < loot.Items.Count; i++)
         {
             var angle = i * 2.4f;
+            var x = monster.X + MathF.Cos(angle) * (0.6f + 0.25f * i);
+            var z = monster.Z + MathF.Sin(angle) * (0.6f + 0.25f * i);
+            if (group is { Count: > 1 })
+            {
+                DistributeGroupLoot(group, killer.PartyId, loot.Items[i], x, z, monster.InstanceId, now);
+                continue;
+            }
             var id = _nextLootId++;
             _loot.Add(id, new ServerLoot
             {
                 Id = id, Drop = loot.Items[i], OwnerId = killer.Id, OwnerPartyId = killer.PartyId,
-                X = monster.X + MathF.Cos(angle) * (0.6f + 0.25f * i), Z = monster.Z + MathF.Sin(angle) * (0.6f + 0.25f * i),
-                OwnerUntil = now + ServerLoot.OwnerSeconds, ExpiresAt = now + ServerLoot.LifetimeSeconds,
+                X = x, Z = z, OwnerUntil = now + ServerLoot.OwnerSeconds, ExpiresAt = now + ServerLoot.LifetimeSeconds,
             });
         }
 

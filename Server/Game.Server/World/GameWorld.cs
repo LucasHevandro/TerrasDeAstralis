@@ -218,6 +218,9 @@ public sealed partial class GameWorld
             case SetResting rest:
                 HandleRest(player, rest.Resting);
                 break;
+            case LootRollChoose choose:
+                HandleLootRoll(player, choose, now);
+                break;
             case PickupLoot pickup:
                 HandlePickup(player, pickup, now);
                 break;
@@ -307,6 +310,7 @@ public sealed partial class GameWorld
         TickDuels(now);
         TickArenas(now, (float)dt);
         ExpireLoot(now);
+        TickLootRolls(now);
         TickTrades();
         TickDailyReset();
 

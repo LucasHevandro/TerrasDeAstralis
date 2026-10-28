@@ -327,6 +327,69 @@ public class ProgressionWorldTests
         Assert.Equal(0, ana.Bag.Count("missao_pelo_macio"));
     }
 
+    /// <summary>Ana (Lâmina) e Bia (Arcanista) no mesmo grupo, perto de um monstro que derruba <paramref name="drops"/>.</summary>
+    private (GameWorld World, FakeOutbox Outbox, ServerPlayer Ana, ServerPlayer Bia) Group(params string[] drops)
+    {
+        var monster = Dummy();
+        monster.Drops = new DropTable(0, 0, drops.Select(d => new DropEntry(d, ItemCatalog.Get(d).Rarity, 1.0)).ToArray());
+        var (world, outbox, ana) = Setup(monster);
+        var bia = world.AddPlayer("", 0, null,
+            AuthService.InitialCharacter(CharacterClass.Arcanist, NewUid) with { Id = 8, AccountId = 2, Name = "Bia" });
+        bia.Movement.Teleport(0, 0, 0);
+        world.Handle(ana.Id, new PartyCommand { Action = PartyActionKind.Invite, TargetName = "Bia" }, 0.5);
+        world.Handle(bia.Id, new PartyCommand { Action = PartyActionKind.Accept, TargetId = ana.Id }, 0.5);
+        return (world, outbox, ana, bia);
+    }
+
+    [Fact]
+    public void Em_grupo_item_comum_vai_para_um_de_cada_vez_e_so_o_dono_ve()
+    {
+        var (world, outbox, ana, bia) = Group("pelo_macio", "pele_lobo");
+        world.Handle(ana.Id, new UseSkill { Slot = 0, TargetId = world.Monsters.Single().Id }, 1);
+        world.Tick(1);
+
+        var loot = world.Loot.Where(l => l.Drop.ItemId is "pelo_macio" or "pele_lobo").ToList();
+        Assert.Equal(2, loot.Count);
+        Assert.Equal(new[] { ana.Id, bia.Id }, loot.Select(l => l.OwnerId).OrderBy(id => id));
+        var biaItem = loot.Single(l => l.OwnerId == bia.Id);
+        Assert.DoesNotContain(outbox.To<LootSpawned>(ana.Id), l => l.LootId == biaItem.Id);
+        world.Handle(ana.Id, new PickupLoot { LootId = biaItem.Id }, 1.1);
+        Assert.Contains(world.Loot, l => l.Id == biaItem.Id); // a Ana não pega o da Bia
+    }
+
+    [Fact]
+    public void Item_raro_vai_a_sorteio_e_preciso_vence_quero()
+    {
+        // Cajado: só a Arcanista pode "Preciso"; o "Preciso" da Lâmina vale como "Quero".
+        var (world, outbox, ana, bia) = Group("cajado_astralita");
+        world.Handle(ana.Id, new UseSkill { Slot = 0, TargetId = world.Monsters.Single().Id }, 1);
+        Assert.DoesNotContain(world.Loot, l => l.Drop.ItemId == "cajado_astralita"); // só cai depois do sorteio
+        var roll = Assert.Single(outbox.To<LootRollStart>(bia.Id));
+        Assert.True(roll.CanNeed);
+        Assert.False(outbox.To<LootRollStart>(ana.Id).Single().CanNeed);
+
+        world.Handle(ana.Id, new LootRollChoose { RollId = roll.RollId, Choice = LootChoice.Need }, 2);
+        world.Handle(bia.Id, new LootRollChoose { RollId = roll.RollId, Choice = LootChoice.Need }, 2);
+
+        var staff = Assert.Single(world.Loot, l => l.Drop.ItemId == "cajado_astralita");
+        Assert.Equal(bia.Id, staff.OwnerId);
+        Assert.Contains(outbox.To<ChatMessage>(ana.Id), m => m.Display.StartsWith("Bia ganhou"));
+    }
+
+    [Fact]
+    public void Sorteio_sem_resposta_vai_pela_vez_quando_o_prazo_acaba()
+    {
+        var (world, outbox, ana, _) = Group("pedra_vigor");
+        world.Handle(ana.Id, new UseSkill { Slot = 0, TargetId = world.Monsters.Single().Id }, 1);
+        Assert.Single(world.LootRolls);
+
+        world.Tick(1 + GroupLoot.RollSeconds + 0.1);
+
+        Assert.Empty(world.LootRolls);
+        Assert.Single(world.Loot, l => l.Drop.ItemId == "pedra_vigor");
+        Assert.Contains(outbox.To<ChatMessage>(ana.Id), m => m.Display.StartsWith("Todos passaram"));
+    }
+
     [Fact]
     public void Material_ja_juntado_para_a_missao_vira_item_de_missao_ao_entrar()
     {

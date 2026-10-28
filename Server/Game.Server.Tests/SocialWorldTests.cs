@@ -164,14 +164,13 @@ public class SocialWorldTests
         Assert.Equal(45, p[1].Alz);
         Assert.Equal(0, p[2].Alz);
 
-        // O drop é do grupo: a Bia pega; o Caio (fora do grupo depois) não poderia antes do tempo.
+        // O drop vai pela vez do grupo (a primeira é de quem matou): só a dona pega, mesmo do mesmo grupo.
         var loot = world.Loot.Single();
-        Assert.Equal(p[0].PartyId, loot.OwnerPartyId);
-        Assert.True(loot.CanBePickedBy(p[1].Id, p[1].PartyId, 6));
-        Assert.False(loot.CanBePickedBy(99, 0, 6));
-        p[1].Movement.Teleport(loot.X, loot.Z, 5);
-        world.Handle(p[1].Id, new PickupLoot { LootId = loot.Id }, 6);
-        Assert.Equal(1, p[1].Bag.Count("pelo_macio"));
+        Assert.Equal(p[0].Id, loot.OwnerId);
+        Assert.False(loot.CanBePickedBy(p[1].Id, p[1].PartyId, 6));
+        Assert.False(loot.CanBePickedBy(99, 0, 6 + ServerLoot.OwnerSeconds));
+        world.Handle(p[0].Id, new PickupLoot { LootId = loot.Id }, 6);
+        Assert.Equal(1, p[0].Bag.Count("pelo_macio"));
     }
 
     [Fact]
