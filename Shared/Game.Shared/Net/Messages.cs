@@ -36,6 +36,7 @@ namespace Game.Shared.Net
         AppearanceCommand = 27,
         MarketCommand = 28,
         SetResting = 29,
+        LootRollChoose = 30,
 
         // Servidor → cliente
         Welcome = 100,
@@ -70,6 +71,7 @@ namespace Game.Shared.Net
         EntityLook = 129,
         MarketState = 130,
         FriendInvite = 131,
+        LootRollStart = 132,
     }
 
     /// <summary>Uma mensagem do protocolo. Cada tipo sabe se escrever; a leitura fica em <see cref="NetCodec"/>.</summary>
@@ -410,6 +412,49 @@ namespace Game.Shared.Net
         public const byte FlagWindUp = 2;
         public const byte FlagEnraged = 4;
         public const byte FlagResting = 8;
+    }
+
+    /// <summary>Item raro do grupo foi a sorteio: o cliente mostra Preciso, Quero e Passar até o prazo.</summary>
+    public sealed class LootRollStart : INetMessage
+    {
+        public MessageType Type => MessageType.LootRollStart;
+        public int RollId;
+        public string ItemId = "";
+        public int Quantity;
+        public float Seconds;
+
+        /// <summary>Este jogador pode escolher "Preciso" (o item serve para a classe dele).</summary>
+        public bool CanNeed;
+
+        public void Write(PacketWriter w)
+        {
+            w.WriteInt(RollId);
+            w.WriteString(ItemId);
+            w.WriteInt(Quantity);
+            w.WriteFloat(Seconds);
+            w.WriteBool(CanNeed);
+        }
+
+        public static LootRollStart Read(PacketReader r) => new LootRollStart
+        {
+            RollId = r.ReadInt(), ItemId = r.ReadString(), Quantity = r.ReadInt(), Seconds = r.ReadFloat(), CanNeed = r.ReadBool(),
+        };
+    }
+
+    /// <summary>Resposta do jogador no sorteio (<see cref="Loot.LootChoice"/>).</summary>
+    public sealed class LootRollChoose : INetMessage
+    {
+        public MessageType Type => MessageType.LootRollChoose;
+        public int RollId;
+        public Loot.LootChoice Choice;
+
+        public void Write(PacketWriter w)
+        {
+            w.WriteInt(RollId);
+            w.WriteByte((byte)Choice);
+        }
+
+        public static LootRollChoose Read(PacketReader r) => new LootRollChoose { RollId = r.ReadInt(), Choice = (Loot.LootChoice)r.ReadByte() };
     }
 
     /// <summary>Sentar ou levantar (a fogueira da vila regenera quem está sentado perto dela).</summary>
@@ -843,6 +888,8 @@ namespace Game.Shared.Net
                 MessageType.MarketState => MarketState.Read(reader),
                 MessageType.FriendInvite => FriendInvite.Read(reader),
                 MessageType.SetResting => SetResting.Read(reader),
+                MessageType.LootRollStart => LootRollStart.Read(reader),
+                MessageType.LootRollChoose => LootRollChoose.Read(reader),
                 _ => throw new ProtocolException($"Tipo de mensagem desconhecido: {(ushort)type}."),
             };
             // Hello de outra versão pode ter mais campos: lê só a versão para o servidor poder recusar com motivo.
