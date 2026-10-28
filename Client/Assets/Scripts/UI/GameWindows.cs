@@ -65,6 +65,10 @@ namespace Game.Client.UI
         private long _discardUid;
         private int _discardSlot = -1;
 
+        // Item da bolsa esperando a confirmação para ser largado no chão.
+        private long _groundUid;
+        private int _groundSlot = -1;
+
         // Ferreira: item e pedra escolhidos (pelo id único, que sobrevive às atualizações do inventário)
         private long _smithItemUid;
         private long _smithStoneUid;
@@ -160,12 +164,13 @@ namespace Game.Client.UI
         /// <summary>Alguma janela que o Esc fecha está aberta (aí o Esc fecha ela em vez de abrir as opções).</summary>
         public static bool AnyOpen => Instance != null && Instance.isActiveAndEnabled &&
             (Instance._inventoryOpen || Instance._attributesOpen || Instance._questLogOpen || Instance._skillsOpen || Instance._progressOpen || Instance._characterOpen ||
-             Instance._discardSlot >= 0 || CharacterState.Dialog != null);
+             Instance._discardSlot >= 0 || Instance._groundSlot >= 0 || CharacterState.Dialog != null);
 
         private void CloseAll()
         {
             _inventoryOpen = _attributesOpen = _questLogOpen = _skillsOpen = _progressOpen = _characterOpen = false;
             _discardSlot = -1;
+            _groundSlot = -1;
             CharacterState.CloseDialog();
         }
 
@@ -263,6 +268,7 @@ namespace Game.Client.UI
             if (_progressOpen) DrawProgress();
             DrawTalkPrompt();
             if (_discardSlot >= 0) DrawDiscardConfirm();
+            if (_groundSlot >= 0) DrawGroundConfirm();
 
             HandleDrop(inventoryShown, characterShown, warehouseOpen, smithOpen, shopOpen);
             if (_dragging) DrawDragged();
@@ -526,7 +532,40 @@ namespace Game.Client.UI
                 var definition = ItemCatalog.Get(item.ItemId);
                 if (definition.IsOptionStone) _smithStoneUid = item.Uid;
                 else if (definition.Kind == ItemKind.Equipment) _smithItemUid = item.Uid;
+                return;
             }
+            // Solto fora de qualquer janela: largar no chão para outro pegar (pede confirmação; item de missão, não).
+            if (from == Msg.ItemContainerKind.Bag && !OpenRects.Exists(r => r.Contains(point)) && !SocialWindows.Contains(point))
+            {
+                if (ItemCatalog.Get(item.ItemId).IsQuestItem)
+                {
+                    Player.ShowNotice(Loc.T("item.quest_no_drop"));
+                    return;
+                }
+                _groundSlot = fromSlot;
+                _groundUid = item.Uid;
+            }
+        }
+
+        private void DrawGroundConfirm()
+        {
+            var item = CharacterState.Bag[_groundSlot];
+            if (item == null || item.Uid != _groundUid)
+            {
+                _groundSlot = -1;
+                return;
+            }
+            var definition = ItemCatalog.Get(item.ItemId);
+            var rect = Window(new Rect(VirtualWidth / 2 - 220, VirtualHeight / 2 - 80, 440, 150), Loc.T("inv.drop_confirm"));
+            var name = item.Upgrade > 0 ? Loc.T("item.with_upgrade", definition.Name, item.Upgrade) : definition.Name;
+            if (item.Quantity > 1) name = $"{name} x{item.Quantity}";
+            GUI.Label(new Rect(rect.x + 14, rect.y + 44, rect.width - 28, 50), Loc.T("inv.drop_hint", name), _small);
+            if (GUI.Button(new Rect(rect.x + 60, rect.yMax - 50, 140, 36), Loc.T("inv.drop_yes"), _button))
+            {
+                Send(new Msg.ItemCommand { Action = Msg.ItemActionKind.Drop, From = Msg.ItemContainerKind.Bag, FromSlot = (ushort)_groundSlot });
+                _groundSlot = -1;
+            }
+            if (GUI.Button(new Rect(rect.xMax - 200, rect.yMax - 50, 140, 36), Loc.T("inv.drop_no"), _button)) _groundSlot = -1;
         }
 
         private static ItemInstance ItemAtSlot(Msg.ItemContainerKind kind, int slot) => kind switch
