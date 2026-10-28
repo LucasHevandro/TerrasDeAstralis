@@ -856,7 +856,11 @@ public sealed partial class GameWorld
             RemoveLoot(loot, 0); // item que não existe mais no catálogo: só some do chão
             return;
         }
-        if (!player.Bag.TryAdd(drop.ItemId, drop.Quantity, _uids.Next))
+        // Item largado por alguém: equipamento volta o mesmo (melhoria e pedra); pilha junta com as da bolsa.
+        var placed = loot.Item != null && ItemCatalog.Get(drop.ItemId).MaxStack <= 1
+            ? player.Bag.TryPlace(loot.Item, out _)
+            : player.Bag.TryAdd(drop.ItemId, drop.Quantity, _uids.Next);
+        if (!placed)
         {
             Notify(player, LT("bag.full_short"));
             return;

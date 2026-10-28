@@ -391,6 +391,41 @@ public class ProgressionWorldTests
     }
 
     [Fact]
+    public void Item_largado_no_chao_vai_inteiro_para_quem_pegar()
+    {
+        var (world, outbox, ana) = Setup();
+        var bia = world.AddPlayer("", 0, null,
+            AuthService.InitialCharacter(CharacterClass.Blade, NewUid) with { Id = 8, AccountId = 2, Name = "Bia" });
+        bia.Movement.Teleport(0, 0, 0);
+        ana.Bag.TryAdd("espada_aco_negro", 1, NewUid);
+        var sword = ana.Bag.Items().First(i => i.Item.ItemId == "espada_aco_negro");
+        sword.Item.Upgrade = 5;
+        sword.Item.OptionId = "pedra_furia";
+        var uid = sword.Item.Uid;
+        ItemCommand Drop(int slot, int quantity = 0) =>
+            new() { Action = ItemActionKind.Drop, From = ItemContainerKind.Bag, FromSlot = (ushort)slot, Quantity = quantity };
+
+        world.Handle(ana.Id, Drop(sword.Slot), 1);
+        Assert.Equal(0, ana.Bag.Count("espada_aco_negro"));
+        var loot = Assert.Single(world.Loot);
+        Assert.True(loot.CanBePickedBy(bia.Id, 0, 1)); // de qualquer um, na hora
+
+        world.Handle(bia.Id, new PickupLoot { LootId = loot.Id }, 1.1);
+        var got = bia.Bag.Items().Single(i => i.Item.ItemId == "espada_aco_negro").Item;
+        Assert.Equal((uid, 5, "pedra_furia"), (got.Uid, got.Upgrade, got.OptionId));
+
+        // Parte de uma pilha; item de missão não sai.
+        var potions = ana.Bag.Items().First(i => i.Item.ItemId == "pocao_hp_p").Slot;
+        world.Handle(ana.Id, Drop(potions, 2), 2);
+        Assert.Equal(3, ana.Bag.Count("pocao_hp_p"));
+        Assert.Equal(2, world.Loot.Single().Drop.Quantity);
+        ana.Bag.TryAdd("missao_pele_lobo", 1, NewUid);
+        world.Handle(ana.Id, Drop(ana.Bag.Items().First(i => i.Item.ItemId == "missao_pele_lobo").Slot), 3);
+        Assert.Equal(1, ana.Bag.Count("missao_pele_lobo"));
+        Assert.Contains(outbox.Notices(ana.Id), n => n.StartsWith("Item de missão não pode"));
+    }
+
+    [Fact]
     public void Material_ja_juntado_para_a_missao_vira_item_de_missao_ao_entrar()
     {
         var bag = AuthService.InitialCharacter(CharacterClass.Blade, NewUid).Items.ToList();

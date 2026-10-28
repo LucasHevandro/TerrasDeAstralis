@@ -314,6 +314,12 @@ public sealed class ServerLoot
     public const double OwnerSeconds = 15;
     public const double LifetimeSeconds = 90;
 
+    /// <summary>Quanto tempo fica no chão um item largado por um jogador.</summary>
+    public const double DroppedSeconds = 180;
+
+    /// <summary>Item largado por um jogador: vai inteiro para quem pegar (melhoria, pedra e identificador).</summary>
+    public ItemInstance? Item { get; init; }
+
     public int Id { get; init; }
     public ItemDrop Drop { get; init; }
     public float X { get; init; }

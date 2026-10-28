@@ -1,5 +1,6 @@
 using Game.Server.Persistence;
 using Game.Shared.Items;
+using Game.Shared.Loot;
 using Game.Shared.Net;
 using Game.Shared.Progression;
 using Game.Shared.Text;
@@ -18,6 +19,7 @@ public sealed partial class GameWorld
             ItemActionKind.Move => MoveItem(player, command),
             ItemActionKind.Discard => DiscardItem(player, command),
             ItemActionKind.Use => UseItem(player, command, now),
+            ItemActionKind.Drop => DropItem(player, command, now),
             _ => LT("item.unknown_action"),
         };
         if (reason != null) Notify(player, reason);
@@ -110,6 +112,49 @@ public sealed partial class GameWorld
         if (quantity == item.Quantity) player.Bag.Take(c.FromSlot);
         else item.Quantity -= quantity;
         Log(player, "descarte", item.ItemId, quantity, 0, $"uid {item.Uid} +{item.Upgrade}");
+        return null;
+    }
+
+    /// <summary>
+    /// Larga o item no chão, à frente do jogador, para qualquer um pegar (item de missão, não). O item vai inteiro, com
+    /// melhoria, pedra e identificador: quem pegar recebe o mesmo item.
+    /// </summary>
+    private LocalText? DropItem(ServerPlayer player, ItemCommand c, double now)
+    {
+        if (c.From != ItemContainerKind.Bag) return LT("item.discard_bag_only");
+        if (player.IsDead) return LT("player.you_are_dead");
+        var item = player.Bag[c.FromSlot];
+        if (item == null) return LT("equip.empty_slot");
+        var definition = ItemCatalog.Get(item.ItemId);
+        if (definition.IsQuestItem) return LT("item.quest_no_drop");
+        var quantity = c.Quantity <= 0 || c.Quantity >= item.Quantity ? item.Quantity : c.Quantity;
+        ItemInstance dropped;
+        if (quantity == item.Quantity)
+        {
+            player.Bag.Take(c.FromSlot);
+            dropped = item;
+        }
+        else
+        {
+            item.Quantity -= quantity;
+            dropped = item.Clone();
+            dropped.Quantity = quantity;
+            dropped.Uid = _uids.Next();
+        }
+
+        var yaw = player.Yaw * MathF.PI / 180f;
+        var id = _nextLootId++;
+        _loot.Add(id, new ServerLoot
+        {
+            Id = id, Drop = new ItemDrop(dropped.ItemId, definition.Name, definition.Rarity, quantity), Item = dropped,
+            OwnerId = player.Id, InstanceId = player.DungeonId,
+            X = player.X + MathF.Sin(yaw) * 1.2f, Z = player.Z + MathF.Cos(yaw) * 1.2f,
+            OwnerUntil = now, ExpiresAt = now + ServerLoot.DroppedSeconds, // livre para todos desde já
+        });
+        player.InventoryDirty = true;
+        player.QuestsDirty |= player.Quests.Active.Any();
+        Log(player, "largou_no_chao", dropped.ItemId, quantity, 0, $"uid {dropped.Uid} +{dropped.Upgrade}, item no chão {id}");
+        Notify(player, LT("item.dropped", Loc.Ref("item." + dropped.ItemId), quantity));
         return null;
     }
 
