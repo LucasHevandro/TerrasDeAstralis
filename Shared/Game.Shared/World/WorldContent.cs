@@ -368,6 +368,26 @@ namespace Game.Shared.World
 
     /// <summary>Regras do personagem que o cliente offline e o servidor precisam concordar.</summary>
     /// <summary>
+    /// Limites do mundo aberto: o terreno vai de X −210 a 210 e de Z −150 a 310; o jogador fica 5 m para dentro da beira
+    /// (antes passava da borda e caía para sempre). Dungeons (Z ≥ 1000) e arena (Z ≤ −1000) ficam fora e têm muros próprios.
+    /// </summary>
+    public static class WorldBounds
+    {
+        public const float MinX = -205f;
+        public const float MaxX = 205f;
+        public const float MinZ = -145f;
+        public const float MaxZ = 305f;
+
+        /// <summary>Está na faixa do mundo aberto (e não numa dungeon ou na arena, que ficam longe dele).</summary>
+        public static bool InOpenWorld(float z) => z > -600f && z < 600f;
+
+        public static bool Inside(float x, float z) => x >= MinX && x <= MaxX && z >= MinZ && z <= MaxZ;
+
+        public static (float X, float Z) Clamp(float x, float z) =>
+            (Math.Min(Math.Max(x, MinX), MaxX), Math.Min(Math.Max(z, MinZ), MaxZ));
+    }
+
+    /// <summary>
     /// Fogueira de descanso no centro da praça: quem senta perto dela recupera vida, MP e SP bem mais rápido. Andar,
     /// atacar ou apanhar levanta. Fora do raio, sentar não faz nada.
     /// </summary>
