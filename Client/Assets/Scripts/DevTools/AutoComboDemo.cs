@@ -193,10 +193,12 @@ namespace Game.Client.DevTools
             Log($"Depois de {kills} coelhos: nível {levelBefore} -> {progression.Level}, XP {xpBefore} -> {progression.Progress.Xp}, " +
                 $"Alz {alzBefore} -> {loot.Alz}, itens no chão {dropped}");
 
-            // Coleta passando por cima de cada item.
+            // Coleta: vai até cada item e aperta a tecla de pegar.
             while (LootPickup.All.Count > 0)
             {
                 Teleport(combat.transform, LootPickup.All[0].transform.position);
+                yield return null;
+                loot.PickupNearest();
                 yield return new WaitForSecondsRealtime(0.15f);
             }
             var items = 0;

@@ -382,7 +382,7 @@ namespace Game.Client.DevTools
             Capture("3-drop-online");
             yield return new WaitForEndOfFrame();
 
-            // Coleta: anda por cima de cada item vindo do servidor (o pedido vai ao servidor, que confirma).
+            // Coleta: vai até cada item vindo do servidor e aperta a tecla de pegar (o servidor confirma).
             var pickupGiveUp = Time.realtimeSinceStartup + 10f;
             while (LootPickup.All.Count > 0 && Time.realtimeSinceStartup < pickupGiveUp)
             {
@@ -390,6 +390,7 @@ namespace Game.Client.DevTools
                 var offset = item.transform.position - motor.transform.position;
                 offset.y = 0;
                 motor.Teleport(motor.transform.position + offset.normalized * Mathf.Min(offset.magnitude, 7f * Time.deltaTime));
+                if (offset.magnitude < 1f) loot.PickupNearest();
                 yield return null;
             }
             yield return new WaitForSecondsRealtime(0.5f);

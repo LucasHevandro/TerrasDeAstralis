@@ -98,6 +98,7 @@ namespace Game.Client.UI
                 PanelRects.Add(new Rect(VirtualWidth - Minimap.Size - 20, Minimap.Top, Minimap.Size, Minimap.Size));
             DrawTargetFrame();
             DrawComboBar();
+            DrawPickupHint();
             DrawAwakening();
             DrawPlayerFrame();
             DrawSkillBar();
@@ -152,6 +153,19 @@ namespace Game.Client.UI
             var dummy = target.GetComponent<TrainingDummy>();
             if (dummy != null)
                 GUI.Label(new Rect(rect.x, rect.y + 52, rect.width, 20), Loc.T("hud.dps", dummy.Dps, dummy.TotalDamage), _small.WithCenter());
+        }
+
+        /// <summary>Perto de um item no chão: mostra a tecla para pegar e o nome dele (passar por cima não pega).</summary>
+        private void DrawPickupHint()
+        {
+            if (_loot == null) _loot = combat.GetComponent<PlayerLoot>();
+            var pickup = _loot != null ? _loot.NearestPickup : null;
+            if (pickup == null) return;
+            var color = ColorUtility.ToHtmlStringRGB(LootPickup.ColorFor(pickup.Drop.Rarity));
+            var name = pickup.Drop.Quantity > 1 ? $"{pickup.Drop.Name} x{pickup.Drop.Quantity}" : pickup.Drop.Name;
+            var rect = new Rect(VirtualWidth / 2 - 330, VirtualHeight - 336, 660, 30);
+            ShadowLabel(rect, Loc.T("hud.pickup_hint", KeyBindings.Label(GameAction.Pickup), $"<color=#{color}><b>{name}</b></color>"),
+                _small.WithCenter(), Color.white, 1f);
         }
 
         private void DrawComboBar()

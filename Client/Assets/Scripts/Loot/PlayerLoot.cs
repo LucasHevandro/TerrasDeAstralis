@@ -16,13 +16,12 @@ namespace Game.Client.Loot
 {
     /// <summary>
     /// Recompensas do jogador no modo offline: ao matar um monstro, ganha XP, Alz e sorteia o drop
-    /// (no jogo online isso será decidido pelo servidor). Itens caem no chão e são coletados
-    /// passando por cima ou com a tecla E.
+    /// (no jogo online isso será decidido pelo servidor). Itens caem no chão e são coletados com a tecla (E): o mais
+    /// perto, um por aperto. Passar por cima não pega mais (pegava sem querer, inclusive o que não interessava).
     /// </summary>
     [RequireComponent(typeof(PlayerProgression))]
     public sealed class PlayerLoot : MonoBehaviour
     {
-        [SerializeField] private float autoPickupRadius = 0.9f;
         [SerializeField] private float keyPickupRadius = 3.5f;
         [SerializeField] private Material lootMaterial;
 
@@ -61,18 +60,35 @@ namespace Game.Client.Loot
             var player = PlayerCombat.Local;
             if (player != null && player.IsDead) return;
 
-            var pressedE = UI.KeyBindings.Pressed(UI.GameAction.Pickup);
+            if (UI.KeyBindings.Pressed(UI.GameAction.Pickup)) PickupNearest();
+        }
 
-            for (var i = LootPickup.All.Count - 1; i >= 0; i--)
+        /// <summary>O item no chão mais perto, ao alcance da tecla de pegar (nulo se não houver).</summary>
+        public LootPickup NearestPickup
+        {
+            get
             {
-                var pickup = LootPickup.All[i];
-                var offset = pickup.transform.position - transform.position;
-                offset.y = 0;
-                var distance = offset.magnitude;
-                if (distance > autoPickupRadius && !(pressedE && distance <= keyPickupRadius)) continue;
-                if (pickup.NetworkId != 0) RequestPickup(pickup);
-                else Collect(pickup);
+                LootPickup nearest = null;
+                var best = keyPickupRadius;
+                foreach (var pickup in LootPickup.All)
+                {
+                    var offset = pickup.transform.position - transform.position;
+                    offset.y = 0;
+                    if (offset.magnitude > best) continue;
+                    best = offset.magnitude;
+                    nearest = pickup;
+                }
+                return nearest;
             }
+        }
+
+        /// <summary>Pega o item mais perto (a tecla, e o teste automático).</summary>
+        public void PickupNearest()
+        {
+            var pickup = NearestPickup;
+            if (pickup == null) return;
+            if (pickup.NetworkId != 0) RequestPickup(pickup);
+            else Collect(pickup);
         }
 
         private void OnMonsterKilled(MonsterController monster)
