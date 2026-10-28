@@ -45,6 +45,9 @@ namespace Game.Client.Fx
         /// <summary>Penteados (a cabeça de qual modelo): 0 = a da classe; depois os aventureiros do pacote.</summary>
         public static readonly string[] HeadModels = { "", "Knight", "Mage", "Ranger", "Rogue", "Barbarian" };
 
+        /// <summary>Cabeça de capuz que faz o papel de elmo na Ranger (o modelo dela não tem chapéu).</summary>
+        public const string RangerHood = "RogueHooded_Head";
+
         /// <summary>Elmo e chapéu: o jogador pode esconder.</summary>
         private static readonly string[] HelmetParts = { "Knight_Helmet", "Knight_HelmetVisor", "Mage_Hat" };
 
@@ -196,6 +199,9 @@ namespace Game.Client.Fx
             if (animator == null) return;
             var own = animator.gameObject.name;
             var wanted = (head > 0 && head < HeadModels.Length ? HeadModels[head] : own) + "_Head";
+            // A Ranger não tem chapéu no modelo: o "elmo" dela é a cabeça de capuz do Rogue (posta no prefab pelo
+            // KayKitBuilder). À mostra, ela usa o capuz; escondendo, aparece o penteado escolhido.
+            if (own == "Ranger" && !hideHelmet) wanted = RangerHood;
             var heads = new List<SkinnedMeshRenderer>();
             foreach (var renderer in animator.GetComponentsInChildren<SkinnedMeshRenderer>(true))
                 if (renderer.name.EndsWith("_Head")) heads.Add(renderer);

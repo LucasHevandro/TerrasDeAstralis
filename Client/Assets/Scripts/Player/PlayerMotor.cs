@@ -158,8 +158,26 @@ namespace Game.Client.Player
             }
             _controller.Move((horizontal + Vector3.up * _verticalVelocity) * Time.deltaTime + correction);
             StayOnBridge();
+            StayInsideWorld();
             if (CurrentSpeed > 0.5f) PlaySteps(CurrentSpeed > walkSpeed + 0.1f);
             else _lastStepPosition = transform.position;
+        }
+
+        /// <summary>
+        /// Borda do mapa: no mundo aberto o jogador não passa dos limites (<see cref="Game.Shared.World.WorldBounds"/>), e se
+        /// por qualquer motivo cair abaixo do chão, volta para cima dele em vez de cair para sempre.
+        /// </summary>
+        private void StayInsideWorld()
+        {
+            var position = transform.position;
+            if (!Game.Shared.World.WorldBounds.InOpenWorld(position.z)) return;
+            if (!Game.Shared.World.WorldBounds.Inside(position.x, position.z))
+            {
+                var (x, z) = Game.Shared.World.WorldBounds.Clamp(position.x, position.z);
+                _controller.Move(new Vector3(x - position.x, 0, z - position.z));
+                position = transform.position;
+            }
+            if (position.y < Game.Client.World.Ground.HeightAt(position.x, position.z) - 5f) Teleport(position);
         }
 
         /// <summary>A ponte não tem colisão: em cima dela, o jogador sobe até as tábuas e para de cair.</summary>

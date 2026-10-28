@@ -479,30 +479,39 @@ namespace Game.Client.Editor
             if (ownHead == null) throw new System.InvalidOperationException($"{own} sem {own}_Head.");
             foreach (var other in HeadModels)
             {
-                if (other == own) continue;
-                var asset = AssetDatabase.LoadAssetAtPath<GameObject>($"{Characters}/{other}.fbx");
-                if (asset == null) continue;
-                var temp = Object.Instantiate(asset);
-                var source = temp.GetComponentsInChildren<SkinnedMeshRenderer>(true).FirstOrDefault(r => r.name == other + "_Head");
-                if (source != null && materials.TryGetValue(other.ToLowerInvariant(), out var material))
-                {
-                    var head = new GameObject(other + "_Head");
-                    head.transform.SetParent(ownHead.transform.parent, false);
-                    head.transform.localPosition = source.transform.localPosition;
-                    head.transform.localRotation = source.transform.localRotation;
-                    head.transform.localScale = source.transform.localScale;
-                    var skinned = head.AddComponent<SkinnedMeshRenderer>();
-                    skinned.sharedMesh = source.sharedMesh;
-                    skinned.bones = source.bones.Select(b => b != null && bones.TryGetValue(b.name, out var mine) ? mine : null).ToArray();
-                    skinned.rootBone = source.rootBone != null && bones.TryGetValue(source.rootBone.name, out var root) ? root : ownHead.rootBone;
-                    skinned.localBounds = source.localBounds;
-                    skinned.sharedMaterials = Enumerable.Repeat(material, Mathf.Max(1, source.sharedMaterials.Length)).ToArray();
-                    skinned.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
-                    skinned.updateWhenOffscreen = false;
-                    head.SetActive(false);
-                }
-                Object.DestroyImmediate(temp);
+                if (other == own || !materials.TryGetValue(other.ToLowerInvariant(), out var material)) continue;
+                AddHead(ownHead, bones, other, other + "_Head", material);
             }
+            // A Ranger não tem chapéu: o "elmo" dela é a cabeça de capuz do Rogue (textura do Rogue).
+            if (own == "Ranger" && materials.TryGetValue("rogue", out var rogue))
+                AddHead(ownHead, bones, "Rogue_Hooded", CharacterPaint.RangerHood, rogue);
+        }
+
+        /// <summary>Cabeça <paramref name="meshName"/> do modelo <paramref name="fbx"/>, escondida e presa aos ossos deste.</summary>
+        private static void AddHead(SkinnedMeshRenderer ownHead, Dictionary<string, Transform> bones, string fbx, string meshName, Material material)
+        {
+            var asset = AssetDatabase.LoadAssetAtPath<GameObject>($"{Characters}/{fbx}.fbx");
+            if (asset == null) return;
+            var temp = Object.Instantiate(asset);
+            var source = temp.GetComponentsInChildren<SkinnedMeshRenderer>(true).FirstOrDefault(r => r.name == meshName);
+            if (source != null)
+            {
+                var head = new GameObject(meshName);
+                head.transform.SetParent(ownHead.transform.parent, false);
+                head.transform.localPosition = source.transform.localPosition;
+                head.transform.localRotation = source.transform.localRotation;
+                head.transform.localScale = source.transform.localScale;
+                var skinned = head.AddComponent<SkinnedMeshRenderer>();
+                skinned.sharedMesh = source.sharedMesh;
+                skinned.bones = source.bones.Select(b => b != null && bones.TryGetValue(b.name, out var mine) ? mine : null).ToArray();
+                skinned.rootBone = source.rootBone != null && bones.TryGetValue(source.rootBone.name, out var root) ? root : ownHead.rootBone;
+                skinned.localBounds = source.localBounds;
+                skinned.sharedMaterials = Enumerable.Repeat(material, Mathf.Max(1, source.sharedMaterials.Length)).ToArray();
+                skinned.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.On;
+                skinned.updateWhenOffscreen = false;
+                head.SetActive(false);
+            }
+            Object.DestroyImmediate(temp);
         }
 
         private static void Attach(GameObject model, string slot, string weapon)
