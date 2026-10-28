@@ -28,6 +28,9 @@ namespace Game.Shared.Net
 
         /// <summary>Usa um consumível da bolsa.</summary>
         Use = 2,
+
+        /// <summary>Larga no chão a quantidade pedida (0 = a pilha inteira), para qualquer um pegar.</summary>
+        Drop = 3,
     }
 
     // ===== Cliente → servidor =====
