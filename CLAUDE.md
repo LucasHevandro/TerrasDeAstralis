@@ -24,7 +24,7 @@ tem a estrutura e como rodar, e `Docs/` tem as decisões, o balanceamento, os vi
   roda a `main`.
 - **Pastas:** `Shared/Game.Shared` (netstandard2.1, também usada pelo Unity como pacote local), `Server/Game.Server`,
   `Client/` (Unity), `Tools/` (Bots, Balance, Launcher, instalador, publicar) e `deploy/` (VPS).
-- **Testes:** `dotnet test Game.slnx -c Release` (hoje são 252 no Shared e 201 no Servidor). Os testes de textos
+- **Testes:** `dotnet test Game.slnx -c Release` (hoje são 252 no Shared e 208 no Servidor). Os testes de textos
   exigem chaves literais no código: nada de `"login.head_" + i`, use um array de chaves literais.
 - **Protocolo:** `Shared/Game.Shared/Net/Messages.cs`, `Protocol.Version = 21`. Se mudar alguma mensagem, suba a
   versão e atualize o cliente e o servidor juntos. O `FuzzTests` conta os tipos de mensagem.
