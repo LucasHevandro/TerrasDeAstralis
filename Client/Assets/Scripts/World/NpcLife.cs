@@ -7,7 +7,7 @@ namespace Game.Client.World
 {
     /// <summary>
     /// Vida dos NPCs: viram para o jogador enquanto conversam (e voltam para a pose de antes), fazem um gesto ao abrir a
-    /// conversa e, parados, trocam de pose de vez em quando. Os gatilhos <c>Talk</c> e <c>Idle2</c> estão no Animator
+    /// conversa e, parados, alternam poses e acenam. Os gatilhos <c>Talk</c>, <c>Idle2</c> e <c>Waving</c> estão no Animator
     /// dos personagens do KayKit; modelo sem eles só vira.
     /// </summary>
     public sealed class NpcLife : MonoBehaviour
@@ -43,7 +43,7 @@ namespace Game.Client.World
 
             if (!talking && Time.time >= _nextIdle)
             {
-                VisualAnimator.Trigger(this, "Idle2");
+                VisualAnimator.Trigger(this, Random.value < 0.3f ? "Waving" : "Idle2");
                 _nextIdle = Time.time + Random.Range(8f, 16f);
             }
         }
@@ -67,6 +67,8 @@ namespace Game.Client.World
             public float Speed;
             public float Radius;
             public float BlockedFor;
+            public float GestureAt;
+            public bool GesturePlayed;
         }
 
         private readonly List<Walker> _walkers = new List<Walker>();
@@ -117,6 +119,7 @@ namespace Game.Client.World
                     Collision = collision,
                     Goal = RandomSpot(),
                     WaitUntil = Time.time + i * 1.5f,
+                    GesturePlayed = true,
                     Speed = child ? 3.2f : WalkSpeed,
                     Radius = radius,
                 });
@@ -194,13 +197,26 @@ namespace Game.Client.World
         {
             foreach (var walker in _walkers)
             {
-                if (walker.Body == null || Time.time < walker.WaitUntil) continue;
+                if (walker.Body == null) continue;
+                if (Time.time < walker.WaitUntil)
+                {
+                    if (!walker.GesturePlayed && Time.time >= walker.GestureAt)
+                    {
+                        var gestures = new[] { "Waving", "Cheering", "PushUps", "SitUps" };
+                        VisualAnimator.Trigger(walker.Body, gestures[_random.Next(gestures.Length)]);
+                        walker.GesturePlayed = true;
+                        walker.WaitUntil = Mathf.Max(walker.WaitUntil, Time.time + 3.5f);
+                    }
+                    continue;
+                }
                 var position = walker.Body.position;
                 var toGoal = new Vector3(walker.Goal.x - position.x, 0, walker.Goal.z - position.z);
                 if (toGoal.magnitude < 0.2f)
                 {
                     // Chegou: fica um pouco e escolhe outro lugar.
                     walker.WaitUntil = Time.time + 2f + (float)_random.NextDouble() * 5f;
+                    walker.GestureAt = Time.time + 0.6f;
+                    walker.GesturePlayed = false;
                     walker.Goal = RandomSpot();
                     continue;
                 }

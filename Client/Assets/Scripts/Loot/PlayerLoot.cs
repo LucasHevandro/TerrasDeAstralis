@@ -146,7 +146,11 @@ namespace Game.Client.Loot
             _requestedAt.Remove(message.LootId);
             if (!_netPickups.TryGetValue(message.LootId, out var pickup)) return;
             _netPickups.Remove(message.LootId);
-            if (message.PickedById == myPlayerId) AddToInventory(pickup.Drop);
+            if (message.PickedById == myPlayerId)
+            {
+                AddToInventory(pickup.Drop);
+                VisualAnimator.Trigger(this, "PickUp");
+            }
             Destroy(pickup.gameObject);
         }
 
@@ -201,6 +205,7 @@ namespace Game.Client.Loot
         private void Collect(LootPickup pickup)
         {
             AddToInventory(pickup.Drop);
+            VisualAnimator.Trigger(this, "PickUp");
             Destroy(pickup.gameObject);
         }
 

@@ -59,6 +59,7 @@ namespace Game.Client.Net
             MonsterData = monsterData;
             transform.position = Game.Client.World.Ground.Point(spawned.X, spawned.Z);
             _style = new Fx.CharacterPaint.Style(spawned.Hair, spawned.Cloth, spawned.Head, spawned.Skin, spawned.HideHelmet);
+            Fx.VisualAnimator.Trigger(this, Kind == EntityKind.Player ? "Spawn" : "Awaken");
         }
 
         private Fx.CharacterPaint.Style _style;
@@ -109,7 +110,10 @@ namespace Game.Client.Net
                 Fx.VisualAnimator.Attack(this, Fx.AttackStyle.ForMonster(TypeId));
             }
             _windUp = windUp;
-            IsEnraged = (state.Flags & EntityState.FlagEnraged) != 0;
+            var enraged = (state.Flags & EntityState.FlagEnraged) != 0;
+            if (enraged && !IsEnraged && Kind == EntityKind.Monster)
+                Fx.VisualAnimator.Trigger(this, Target != null && Target.Elite ? "TauntLong" : "Taunt");
+            IsEnraged = enraged;
         }
 
         /// <summary>Velocidade a partir da qual um deslocamento entre dois retratos é um salto, não uma corrida (m/s).</summary>

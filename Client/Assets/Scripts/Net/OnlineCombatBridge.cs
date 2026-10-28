@@ -67,6 +67,11 @@ namespace Game.Client.Net
                     break;
                 case LootRemoved removed:
                     if (_loot != null) _loot.OnServerLootRemoved(removed, _session.PlayerId);
+                    if (removed.PickedById != 0 && removed.PickedById != _session.PlayerId)
+                        VisualAnimator.Trigger(_session.FindView(removed.PickedById), "PickUp");
+                    break;
+                case ActorAnimation action:
+                    OnActorAnimation(action);
                     break;
                 case Inventory inventory:
                     if (_loot != null) _loot.SetServerInventory(inventory);
@@ -108,6 +113,19 @@ namespace Game.Client.Net
                     ShowAreaWarning(area);
                     break;
             }
+        }
+
+        private void OnActorAnimation(ActorAnimation action)
+        {
+            var trigger = action.Action switch
+            {
+                ActorAnimationKind.UseItem => "UseItem",
+                ActorAnimationKind.ThrowItem => "ThrowItem",
+                _ => null,
+            };
+            if (trigger == null) return;
+            if (action.EntityId == _session.PlayerId) VisualAnimator.Trigger(_combat, trigger);
+            else VisualAnimator.Trigger(_session.FindView(action.EntityId), trigger);
         }
 
         private void OnCombatEvent(CombatEvent hit)

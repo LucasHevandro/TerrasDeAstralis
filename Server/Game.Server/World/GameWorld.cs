@@ -473,6 +473,18 @@ public sealed partial class GameWorld
         }
     }
 
+    /// <summary>Sincroniza uma ação visual só com jogadores próximos na mesma instância.</summary>
+    private void BroadcastActorAnimation(ServerPlayer actor, ActorAnimationKind action)
+    {
+        var message = new ActorAnimation { EntityId = actor.Id, Action = action };
+        foreach (var observer in _players.Values)
+        {
+            if (observer.DungeonId == actor.DungeonId && observer.ArenaId == actor.ArenaId &&
+                InRange(observer.X, observer.Z, actor.X, actor.Z, InterestRadius))
+                _outbox.Send(observer.Id, message);
+        }
+    }
+
     private void Notify(ServerPlayer player, LocalText text, bool announcement = false) =>
         _outbox.Send(player.Id, new Notice { Text = text, Announcement = announcement });
 

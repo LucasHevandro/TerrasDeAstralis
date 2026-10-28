@@ -72,6 +72,7 @@ namespace Game.Shared.Net
         MarketState = 130,
         FriendInvite = 131,
         LootRollStart = 132,
+        ActorAnimation = 133,
     }
 
     /// <summary>Uma mensagem do protocolo. Cada tipo sabe se escrever; a leitura fica em <see cref="NetCodec"/>.</summary>
@@ -83,11 +84,11 @@ namespace Game.Shared.Net
 
     /// <summary>
     /// Versão do protocolo. Subir sempre que uma mensagem mudar de formato ou de sentido (20: itens na barra; 21: convite
-    /// de amizade, ameaça e descanso na fogueira).
+    /// de amizade, ameaça e descanso na fogueira; 22: ações visuais confirmadas pelo servidor).
     /// </summary>
     public static class Protocol
     {
-        public const int Version = 21;
+        public const int Version = 22;
         public const int DefaultPort = 7777;
     }
 
@@ -673,6 +674,31 @@ namespace Game.Shared.Net
         public static LootRemoved Read(PacketReader r) => new LootRemoved { LootId = r.ReadInt(), PickedById = r.ReadInt() };
     }
 
+    /// <summary>Ação visual confirmada pelo servidor para sincronizar os jogadores próximos.</summary>
+    public sealed class ActorAnimation : INetMessage
+    {
+        public MessageType Type => MessageType.ActorAnimation;
+        public int EntityId;
+        public ActorAnimationKind Action;
+
+        public void Write(PacketWriter w)
+        {
+            w.WriteInt(EntityId);
+            w.WriteByte((byte)Action);
+        }
+
+        public static ActorAnimation Read(PacketReader r) => new ActorAnimation
+        {
+            EntityId = r.ReadInt(), Action = (ActorAnimationKind)r.ReadByte(),
+        };
+    }
+
+    public enum ActorAnimationKind : byte
+    {
+        UseItem = 1,
+        ThrowItem = 2,
+    }
+
     /// <summary>O servidor recusou o movimento (rápido demais): o cliente volta para esta posição.</summary>
     public sealed class PositionCorrection : INetMessage
     {
@@ -889,6 +915,7 @@ namespace Game.Shared.Net
                 MessageType.FriendInvite => FriendInvite.Read(reader),
                 MessageType.SetResting => SetResting.Read(reader),
                 MessageType.LootRollStart => LootRollStart.Read(reader),
+                MessageType.ActorAnimation => ActorAnimation.Read(reader),
                 MessageType.LootRollChoose => LootRollChoose.Read(reader),
                 _ => throw new ProtocolException($"Tipo de mensagem desconhecido: {(ushort)type}."),
             };

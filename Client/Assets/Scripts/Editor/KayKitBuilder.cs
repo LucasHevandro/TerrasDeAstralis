@@ -99,9 +99,12 @@ namespace Game.Client.Editor
             var materials = Materials();
             var controller = BuildController("Personagem", Clip("General", "Idle_A"), Clip("MovementBasic", "Walking_A"),
                 Clip("MovementBasic", "Running_A"), Clip("General", "Death_A"));
+            var ranger = BuildController("Ranger", Clip("CombatRanged", "Ranged_Bow_Idle"), Clip("MovementBasic", "Walking_A"),
+                Clip("MovementAdvanced", "Running_HoldingBow"), Clip("General", "Death_A"), bowStyle: true);
             var skeleton = BuildController("Esqueleto", Clip("Special", "Skeletons_Idle"), Clip("Special", "Skeletons_Walking"),
                 Clip("MovementBasic", "Running_A"), Clip("Special", "Skeletons_Death"));
-            foreach (var (id, look) in ClassLooks) MakePrefab($"{Visuals}/class/{id}.prefab", look, materials, controller, weaponFx: true);
+            foreach (var (id, look) in ClassLooks)
+                MakePrefab($"{Visuals}/class/{id}.prefab", look, materials, id == "ranger" ? ranger : controller, weaponFx: true);
             foreach (var (id, look) in NpcLooks) MakePrefab($"{Visuals}/npc/{id}.prefab", look, materials, controller);
             Directory.CreateDirectory($"{Visuals}/villager");
             foreach (var (id, look) in VillagerLooks) MakePrefab($"{Visuals}/villager/{id}.prefab", look, materials, controller);
@@ -241,7 +244,8 @@ namespace Game.Client.Editor
             return clip;
         }
 
-        private static AnimatorController BuildController(string name, AnimationClip idle, AnimationClip walk, AnimationClip run, AnimationClip dying)
+        private static AnimatorController BuildController(string name, AnimationClip idle, AnimationClip walk, AnimationClip run, AnimationClip dying,
+            bool bowStyle = false)
         {
             var path = $"{Generated}/{name}.controller";
             AssetDatabase.DeleteAsset(path);
@@ -250,8 +254,10 @@ namespace Game.Client.Editor
             controller.AddParameter("Attack", AnimatorControllerParameterType.Trigger);
             controller.AddParameter("AttackKind", AnimatorControllerParameterType.Int);
             controller.AddParameter("Hit", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("HitVariant", AnimatorControllerParameterType.Int);
             controller.AddParameter("Dodge", AnimatorControllerParameterType.Trigger);
             controller.AddParameter("Dead", AnimatorControllerParameterType.Bool);
+            controller.AddParameter("DeathVariant", AnimatorControllerParameterType.Int);
             controller.AddParameter(new AnimatorControllerParameter
             {
                 name = "AttackSpeed", type = AnimatorControllerParameterType.Float, defaultFloat = 1f,
@@ -284,6 +290,32 @@ namespace Game.Client.Editor
             };
             foreach (var attack in attacks)
             {
+                if (bowStyle && attack.Style == AttackStyle.RangedShoot)
+                {
+                    var draw = Clip("CombatRanged", "Ranged_Bow_Draw");
+                    var release = Clip("CombatRanged", "Ranged_Bow_Release");
+                    var drawState = machine.AddState("Golpe com arco: puxar");
+                    drawState.motion = draw;
+                    drawState.speed = draw.length / 0.34f;
+                    var releaseState = machine.AddState("Golpe com arco: soltar");
+                    releaseState.motion = release;
+                    releaseState.speed = release.length / 0.26f;
+
+                    var enterBow = machine.AddAnyStateTransition(drawState);
+                    enterBow.AddCondition(AnimatorConditionMode.If, 0, "Attack");
+                    enterBow.AddCondition(AnimatorConditionMode.Equals, attack.Style, "AttackKind");
+                    enterBow.AddCondition(AnimatorConditionMode.IfNot, 0, "Dead");
+                    Quick(enterBow, 0.04f);
+                    enterBow.canTransitionToSelf = true;
+
+                    var releaseBow = drawState.AddTransition(releaseState);
+                    releaseBow.hasExitTime = true;
+                    releaseBow.exitTime = 0.9f;
+                    releaseBow.duration = 0.03f;
+                    releaseBow.hasFixedDuration = true;
+                    Leave(releaseState, locomotion, 0.9f);
+                    continue;
+                }
                 var clip = Clip(attack.File, attack.Clip);
                 var state = machine.AddState($"Golpe {attack.Style}: {attack.Clip}");
                 state.motion = clip;
@@ -334,18 +366,26 @@ namespace Game.Client.Editor
                 if (previous != null) Leave(previous, locomotion, 0.9f);
             }
 
-            var hit = machine.AddState("Dano");
-            hit.motion = Clip("General", "Hit_A");
-            hit.speed = 1.3f;
-            var toHit = machine.AddAnyStateTransition(hit);
-            toHit.AddCondition(AnimatorConditionMode.If, 0, "Hit");
-            toHit.AddCondition(AnimatorConditionMode.IfNot, 0, "Dead");
-            Quick(toHit, 0.05f);
-            Leave(hit, locomotion, 0.8f);
+            AddHitVariant(machine, locomotion, "Hit_A", 0);
+            AddHitVariant(machine, locomotion, "Hit_B", 1);
 
-            // Gestos dos NPCs: conversar (Talk) e trocar a pose parada de vez em quando (Idle2).
+            // Ações contextuais que podem ser usadas por NPCs e jogadores.
             AddGesture(controller, machine, locomotion, "Talk", Clip("General", "Interact"));
             AddGesture(controller, machine, locomotion, "Idle2", Clip("General", "Idle_B"));
+            AddGesture(controller, machine, locomotion, "PickUp", Clip("General", "PickUp"), onlyStationary: false);
+            AddGesture(controller, machine, locomotion, "UseItem", Clip("General", "Use_Item"), onlyStationary: false);
+            AddGesture(controller, machine, locomotion, "ThrowItem", Clip("General", "Throw"), onlyStationary: false);
+            AddGesture(controller, machine, locomotion, "Spawn", Clip("General", "Spawn_Ground"));
+            AddGesture(controller, machine, locomotion, "Waving", Clip("Simulation", "Waving"));
+            AddGesture(controller, machine, locomotion, "Cheering", Clip("Simulation", "Cheering"));
+            AddGesture(controller, machine, locomotion, "PushUps", Clip("Simulation", "Push_Ups"));
+            AddGesture(controller, machine, locomotion, "SitUps", Clip("Simulation", "Sit_Ups"));
+            if (name == "Esqueleto")
+            {
+                AddGesture(controller, machine, locomotion, "Awaken", Clip("Special", "Skeletons_Awaken_Standing"));
+                AddGesture(controller, machine, locomotion, "Taunt", Clip("Special", "Skeletons_Taunt"));
+                AddGesture(controller, machine, locomotion, "TauntLong", Clip("Special", "Skeletons_Taunt_Longer"));
+            }
 
             var dodge = machine.AddState("Esquiva");
             dodge.motion = Clip("MovementAdvanced", "Dodge_Forward");
@@ -402,32 +442,61 @@ namespace Game.Client.Editor
             sitAgain.duration = 0.12f;
             sitAgain.hasFixedDuration = true;
 
-            var death = machine.AddState("Morte");
-            death.motion = dying;
-            var toDeath = machine.AddAnyStateTransition(death);
-            toDeath.AddCondition(AnimatorConditionMode.If, 0, "Dead");
-            toDeath.canTransitionToSelf = false;
-            Quick(toDeath, 0.1f);
-            var revive = death.AddTransition(locomotion);
-            revive.AddCondition(AnimatorConditionMode.IfNot, 0, "Dead");
-            Quick(revive, 0.2f);
+            AnimatorState resurrection = null;
+            if (name == "Esqueleto")
+            {
+                resurrection = machine.AddState("Ressuscitando");
+                resurrection.motion = Clip("Special", "Skeletons_Death_Resurrect");
+                Leave(resurrection, locomotion, 0.95f);
+            }
+            AddDeathState(machine, locomotion, dying, 0, resurrection);
+            if (name != "Esqueleto") AddDeathState(machine, locomotion, Clip("General", "Death_B"), 1);
 
             EditorUtility.SetDirty(controller);
             return controller;
         }
 
+        private static void AddHitVariant(AnimatorStateMachine machine, AnimatorState locomotion, string clipName, int variant)
+        {
+            var hit = machine.AddState("Dano " + clipName);
+            hit.motion = Clip("General", clipName);
+            hit.speed = 1.3f;
+            var toHit = machine.AddAnyStateTransition(hit);
+            toHit.AddCondition(AnimatorConditionMode.If, 0, "Hit");
+            toHit.AddCondition(AnimatorConditionMode.Equals, variant, "HitVariant");
+            toHit.AddCondition(AnimatorConditionMode.IfNot, 0, "Dead");
+            Quick(toHit, 0.05f);
+            Leave(hit, locomotion, 0.8f);
+        }
+
+        private static void AddDeathState(AnimatorStateMachine machine, AnimatorState locomotion, AnimationClip clip, int variant,
+            AnimatorState resurrection = null)
+        {
+            var death = machine.AddState("Morte " + clip.name);
+            death.motion = clip;
+            var toDeath = machine.AddAnyStateTransition(death);
+            toDeath.AddCondition(AnimatorConditionMode.If, 0, "Dead");
+            if (clip.name == "Death_A" || clip.name == "Death_B")
+                toDeath.AddCondition(AnimatorConditionMode.Equals, variant, "DeathVariant");
+            toDeath.canTransitionToSelf = false;
+            Quick(toDeath, 0.1f);
+            var revive = death.AddTransition(resurrection != null ? resurrection : locomotion);
+            revive.AddCondition(AnimatorConditionMode.IfNot, 0, "Dead");
+            Quick(revive, 0.2f);
+        }
+
         private static void AddGesture(AnimatorController controller, AnimatorStateMachine machine, AnimatorState locomotion, string trigger,
-            AnimationClip clip)
+            AnimationClip clip, bool onlyStationary = true)
         {
             if (clip == null) return;
             if (controller.parameters.All(p => p.name != trigger))
                 controller.AddParameter(trigger, AnimatorControllerParameterType.Trigger);
             var state = machine.AddState("Gesto " + trigger);
             state.motion = clip;
-            // Só sai do andar/parado (um gesto não corta golpe, dano nem morte).
+            // As ações só interrompem a locomoção; não cortam golpe, dano ou morte.
             var enter = locomotion.AddTransition(state);
             enter.AddCondition(AnimatorConditionMode.If, 0, trigger);
-            enter.AddCondition(AnimatorConditionMode.Less, 0.2f, "Speed");
+            if (onlyStationary) enter.AddCondition(AnimatorConditionMode.Less, 0.2f, "Speed");
             enter.AddCondition(AnimatorConditionMode.IfNot, 0, "Dead");
             Quick(enter, 0.15f);
             Leave(state, locomotion, 0.9f);

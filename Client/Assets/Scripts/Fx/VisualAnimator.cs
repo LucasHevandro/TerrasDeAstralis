@@ -15,6 +15,8 @@ namespace Game.Client.Fx
         private static readonly int AttackId = Animator.StringToHash("Attack");
         private static readonly int AttackKindId = Animator.StringToHash("AttackKind");
         private static readonly int AttackSpeedId = Animator.StringToHash("AttackSpeed");
+        private static readonly int HitVariantId = Animator.StringToHash("HitVariant");
+        private static readonly int DeathVariantId = Animator.StringToHash("DeathVariant");
         private static readonly int RestingId = Animator.StringToHash("Resting");
 
         private readonly HashSet<int> _parameters = new HashSet<int>();
@@ -22,6 +24,7 @@ namespace Game.Client.Fx
         private ProceduralRig _rig;
         private Vector3 _lastPosition;
         private float _speed;
+        private bool _wasDead;
 
         /// <summary>Morto (o objeto do jogo avisa; o modelo pode ter uma pose de queda).</summary>
         public bool Dead { get; set; }
@@ -98,6 +101,9 @@ namespace Game.Client.Fx
             }
             if (_animator == null) return;
             if (_parameters.Contains(SpeedId)) _animator.SetFloat(SpeedId, _speed);
+            if (Dead && !_wasDead && _parameters.Contains(DeathVariantId))
+                _animator.SetInteger(DeathVariantId, Random.Range(0, 2));
+            _wasDead = Dead;
             if (_parameters.Contains(DeadId)) _animator.SetBool(DeadId, Dead);
             if (_parameters.Contains(RestingId)) _animator.SetBool(RestingId, Resting && !Dead);
         }
@@ -109,6 +115,8 @@ namespace Game.Client.Fx
             if (_rig != null) _rig.Trigger(trigger);
             if (trigger == "Hit") HitFlash.Play(gameObject);
             var id = Animator.StringToHash(trigger);
+            if (trigger == "Hit" && _animator != null && _parameters.Contains(HitVariantId))
+                _animator.SetInteger(HitVariantId, Random.Range(0, 2));
             if (_animator != null && _parameters.Contains(id)) _animator.SetTrigger(id);
         }
     }

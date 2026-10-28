@@ -189,6 +189,7 @@ namespace Game.Client.Net
                     PlayerId = welcome.PlayerId;
                     Clock.Seed(welcome.ServerTime, LocalNow);
                     if (_motor != null) _motor.Teleport(Game.Client.World.Ground.Point(welcome.SpawnX, welcome.SpawnZ));
+                    if (_combat != null) VisualAnimator.Trigger(_combat, "Spawn");
                     _client.Send(new Ping { ClientTime = LocalNow });
                     break;
                 case Reject reject:

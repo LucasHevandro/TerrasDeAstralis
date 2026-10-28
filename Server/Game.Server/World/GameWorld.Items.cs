@@ -155,6 +155,7 @@ public sealed partial class GameWorld
         player.QuestsDirty |= player.Quests.Active.Any();
         Log(player, "largou_no_chao", dropped.ItemId, quantity, 0, $"uid {dropped.Uid} +{dropped.Upgrade}, item no chão {id}");
         Notify(player, LT("item.dropped", Loc.Ref("item." + dropped.ItemId), quantity));
+        BroadcastActorAnimation(player, ActorAnimationKind.ThrowItem);
         return null;
     }
 
@@ -172,6 +173,7 @@ public sealed partial class GameWorld
             return LT(mana ? "item.mp_full" : "item.hp_full");
 
         Drink(player, c.FromSlot, item, definition, now);
+        BroadcastActorAnimation(player, ActorAnimationKind.UseItem);
         return null;
     }
 
@@ -212,6 +214,7 @@ public sealed partial class GameWorld
         if (player.Mp.Current + chosen.Definition.HealMp < cost) return false;
         Drink(player, chosen.Slot, chosen.Item, chosen.Definition, now);
         Notify(player, LT("item.auto_mana", Loc.Ref("item." + chosen.Item.ItemId)));
+        BroadcastActorAnimation(player, ActorAnimationKind.UseItem);
         return true;
     }
 
