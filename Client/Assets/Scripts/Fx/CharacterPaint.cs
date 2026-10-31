@@ -49,7 +49,7 @@ namespace Game.Client.Fx
         public const string RangerHood = "RogueHooded_Head";
 
         /// <summary>Elmo e chapéu: o jogador pode esconder.</summary>
-        private static readonly string[] HelmetParts = { "Knight_Helmet", "Knight_HelmetVisor", "Mage_Hat" };
+        private static readonly string[] HelmetParts = { "Knight_Helmet", "Knight_HelmetVisor", "Mage_Hat", "Barbarian_Large_BearHat" };
 
         /// <summary>O que o jogador escolheu na criação (cores, penteado, pele) e se o elmo aparece.</summary>
         public readonly struct Style
@@ -131,7 +131,14 @@ namespace Game.Client.Fx
             },
             // Os outros aventureiros só emprestam a cabeça (penteado): cabelo (1,0) e pele (0,0), como nos de cima.
             ["rogue_texture"] = new Layout { Metal = System.Array.Empty<Vector2Int>(), Hair = new[] { new Vector2Int(1, 0) } },
-            ["barbarian_texture"] = new Layout { Metal = System.Array.Empty<Vector2Int>(), Hair = new[] { new Vector2Int(1, 0) } },
+            // Barbarian: nos outros só empresta a cabeça; no Guardião (o Barbarian grande) as fivelas e os cravos de aço
+            // (3,0) e (3,1) seguem a armadura e as manoplas (4,0) as luvas.
+            ["barbarian_texture"] = new Layout
+            {
+                Metal = new[] { new Vector2Int(3, 0), new Vector2Int(3, 1) },
+                ArmMetal = new[] { new Vector2Int(4, 0) },
+                Hair = new[] { new Vector2Int(1, 0) },
+            },
         };
 
         private const int AstralGrade = 3;

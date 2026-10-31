@@ -14,6 +14,12 @@ namespace Game.Client.Fx
         /// <summary>Animações em sequência: arquivo Rig_Medium_*, clipe e quanto dura no jogo (segundos).</summary>
         public (string File, string Clip, float Seconds)[] Steps = System.Array.Empty<(string, string, float)>();
 
+        /// <summary>
+        /// O mesmo golpe no esqueleto grande (Rig_Large_*, o Guardião). Nulo nas skills das outras classes: o Animator do
+        /// Rig_Large só tem estado para as skills que preenchem este campo.
+        /// </summary>
+        public (string File, string Clip, float Seconds)[] LargeSteps;
+
         /// <summary>Segundos depois do aperto em que a arma acerta (físicas) ou a magia sai da ponta do cajado (mágicas).</summary>
         public float[] Impacts = { 0.2f };
 
@@ -147,6 +153,57 @@ namespace Game.Client.Fx
                 Id = "tiro_do_falcao",
                 Steps = new[] { ("CombatRanged", "Ranged_Bow_Draw", 0.75f), ("CombatRanged", "Ranged_Bow_Release", 0.55f) },
                 Impacts = new[] { 0.78f }, Charge = true, NoTrail = true,
+            },
+
+            // ----- Guardião (Rig_Large; os Steps só dão o estado também ao Animator do Rig_Medium) -----
+            new SkillMove
+            {
+                Id = "golpe_de_machado", Steps = new[] { ("CombatMelee", "Melee_1H_Attack_Chop", 0.5f) },
+                LargeSteps = new[] { ("CombatMelee", "Melee_1H_Slash", 0.5f) },
+                Impacts = new[] { 0.22f }, Lunge = 0.15f, LungeAt = 0.2f, TrailFrom = 0.08f, TrailTo = 0.3f,
+            },
+            new SkillMove
+            {
+                Id = "grito_de_guerra", Steps = new[] { ("CombatMelee", "Melee_Unarmed_Attack_Punch_A", 0.6f) },
+                LargeSteps = new[] { ("CombatMelee", "Melee_Unarmed_Smash", 0.6f) },
+                Impacts = new[] { 0.32f }, NoTrail = true,
+            },
+            new SkillMove
+            {
+                Id = "investida_de_escudo", Steps = new[] { ("CombatMelee", "Melee_Block_Attack", 0.55f) },
+                LargeSteps = new[] { ("CombatMelee", "Melee_Block_Attack", 0.55f) },
+                Impacts = new[] { 0.25f }, Lunge = 0.6f, LungeAt = 0.22f, NoTrail = true,
+            },
+            new SkillMove
+            {
+                Id = "golpe_esmagador", Steps = new[] { ("CombatMelee", "Melee_2H_Attack_Chop", 0.75f) },
+                LargeSteps = new[] { ("CombatMelee", "Melee_2H_Attack", 0.75f) },
+                Impacts = new[] { 0.4f }, Lunge = 0.3f, LungeAt = 0.38f, TrailFrom = 0.25f, TrailTo = 0.45f,
+            },
+            new SkillMove
+            {
+                Id = "desafio", Steps = new[] { ("CombatMelee", "Melee_Unarmed_Attack_Punch_A", 0.5f) },
+                LargeSteps = new[] { ("CombatMelee", "Melee_Unarmed_Punch", 0.5f) },
+                Impacts = new[] { 0.22f }, NoTrail = true,
+            },
+            new SkillMove
+            {
+                Id = "terremoto", Steps = new[] { ("CombatMelee", "Melee_1H_Attack_Jump_Chop", 0.85f) },
+                LargeSteps = new[] { ("CombatMelee", "Melee_2H_Slam", 0.85f) },
+                Impacts = new[] { 0.55f }, TrailFrom = 0.35f, TrailTo = 0.6f,
+            },
+            new SkillMove
+            {
+                Id = "furia_do_urso", Steps = new[] { ("CombatMelee", "Melee_2H_Attack_Spin", 1.2f) },
+                LargeSteps = new[] { ("CombatMelee", "Melee_Dualwield_SlashCombo", 1.2f) },
+                Impacts = new[] { 0.35f, 0.75f }, Lunge = 0.3f, LungeAt = 0.3f, TrailFrom = 0.2f, TrailTo = 0.9f,
+            },
+            new SkillMove
+            {
+                Id = "colosso",
+                Steps = new[] { ("CombatMelee", "Melee_2H_Attack_Chop", 0.45f), ("CombatMelee", "Melee_1H_Attack_Jump_Chop", 0.55f) },
+                LargeSteps = new[] { ("CombatMelee", "Melee_2H_Attack", 0.45f), ("CombatMelee", "Melee_2H_Slam", 0.55f) },
+                Impacts = new[] { 0.3f, 0.8f }, Lunge = 0.8f, LungeAt = 0.7f, TrailFrom = 0.15f, TrailTo = 0.9f,
             },
         };
 

@@ -28,6 +28,17 @@ namespace Game.Client.Net
 
         public Texture Texture => _texture;
 
+        /// <summary>
+        /// A câmera enquadra um personagem de 1,9 m: o Guardião (2,3 m) é reduzido na prévia para caber inteiro.
+        /// </summary>
+        private static void FitHeight(GameObject model)
+        {
+            if (model == null) return;
+            var bounds = new Bounds(model.transform.position, Vector3.zero);
+            foreach (var renderer in model.GetComponentsInChildren<SkinnedMeshRenderer>()) bounds.Encapsulate(renderer.bounds);
+            if (bounds.size.y > 2f) model.transform.localScale *= 1.9f / bounds.size.y;
+        }
+
         public void Show(CharacterClass characterClass, CharacterPaint.Style style, CharacterPaint.Gear gear = default,
             string weaponId = "", int upgrade = 0)
         {
@@ -53,6 +64,7 @@ namespace Game.Client.Net
                 if (_model != null) Object.Destroy(_model);
                 _class = characterClass;
                 _model = VisualCatalog.Spawn(VisualCatalog.Class, ClassInfo.TypeId(characterClass), _rig.transform);
+                FitHeight(_model);
                 _style = null;
                 _weapon = "";
                 _upgrade = -1;

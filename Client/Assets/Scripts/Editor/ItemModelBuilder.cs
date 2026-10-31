@@ -43,6 +43,9 @@ namespace Game.Client.Editor
             WeaponPrefab("arco_ferro", "bow_withString", "ranger", 0, 1f);
             WeaponPrefab("arco_aco_negro", "bow_withString", "ranger", 1, 1.05f);
             WeaponPrefab("arco_astralita", "bow_withString", "ranger", 2, 1.1f);
+            WeaponPrefab("machado_ferro", "axe_1handed_Large", "barbarian", 0, 1f);
+            WeaponPrefab("machado_aco_negro", "axe_1handed_Large", "barbarian", 1, 1.05f);
+            WeaponPrefab("machado_astralita", "axe_1handed_Large", "barbarian", 2, 1.1f);
             ArrowPrefab();
             Gear();
             Small();

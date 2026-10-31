@@ -95,6 +95,15 @@ namespace Game.Client.Fx
             ["flecha_flamejante"] = new Feel { Color = Fire, Projectile = ProjectileStyle.Arrow, ProjectileSize = 1.3f, Weight = 0.7f, Sparks = 24 },
             ["saraivada"] = new Feel { Color = Steel, Projectile = ProjectileStyle.ArrowRain, ProjectileSize = 1.2f, Weight = 0.9f, Sparks = 26 },
             ["tiro_do_falcao"] = new Feel { Color = new Color(1f, 0.85f, 0.4f), Projectile = ProjectileStyle.Arrow, ProjectileSize = 1.8f, Weight = 1.6f, Sparks = 36 },
+            // ----- Guardião (machado e escudo, golpes pesados) -----
+            ["golpe_de_machado"] = new Feel { Color = Steel, Weight = 0.2f, Sparks = 12 },
+            ["grito_de_guerra"] = new Feel { Color = Blood, Weight = 0.4f, Sparks = 16 },
+            ["investida_de_escudo"] = new Feel { Color = Wood, Weight = 0.5f, Sparks = 14 },
+            ["golpe_esmagador"] = new Feel { Color = Steel, Weight = 0.8f, Sparks = 20 },
+            ["desafio"] = new Feel { Color = Blood, Weight = 0.2f, Sparks = 12 },
+            ["terremoto"] = new Feel { Color = Earth, Weight = 1.1f, Sparks = 24 },
+            ["furia_do_urso"] = new Feel { Color = Fire, Double = true, Weight = 1f, Sparks = 26 },
+            ["colosso"] = new Feel { Color = Earth, Double = true, Weight = 1.7f, Sparks = 36 },
         };
 
         private static bool IsArrow(Feel feel) =>
@@ -440,6 +449,17 @@ namespace Game.Client.Fx
                     break;
                 case "chute_de_recuo":
                     Dust(ground, 1f, 8);
+                    break;
+                case "grito_de_guerra":
+                case "desafio":
+                    // Provocação: um clarão vermelho no alvo (os monstros atingidos passam a atacar o Guardião).
+                    fx.Flash(center, color, 2.4f, area > 0 ? area * 2f : 4f, 0.18f);
+                    MagicFx.Burst(center, area > 0 ? area * 0.8f : 1.2f, color, 0.4f);
+                    break;
+                case "terremoto":
+                case "colosso":
+                    Dust(ground, Mathf.Max(1.5f, area * 0.8f), skill.Id == "colosso" ? 22 : 16);
+                    MagicFx.Mark(GroundMarkStyle.Scorch, floor, Mathf.Max(1.5f, area), new Color(1.2f, 0.8f, 0.45f), 2.2f);
                     break;
                 case "tiro_certeiro":
                 case "flecha_perfurante":

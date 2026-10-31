@@ -202,8 +202,54 @@ namespace Game.Client.UI
                         };
                         return shapes.ToArray();
                     }
+                // ----- Guardião: machado e escudo -----
+                case "golpe_de_machado": return Axe(-0.5f, -0.6f, 0.35f, 0.45f);
+                case "grito_de_guerra":
+                    return new Shape[]
+                    {
+                        new Ring(-0.35f, 0, 0.25f, 0.07f), new Ring(-0.1f, 0, 0.5f, 0.06f, -50f, 50f), new Ring(-0.1f, 0, 0.75f, 0.05f, -45f, 45f),
+                    };
+                case "investida_de_escudo":
+                    return new Shape[] { new Ring(0.1f, 0, 0.42f, 0.09f), new Disc(0.1f, 0, 0.12f), new Segment(-0.75f, 0.2f, -0.4f, 0.2f, 0.05f), new Segment(-0.75f, -0.2f, -0.4f, -0.2f, 0.05f) };
+                case "golpe_esmagador":
+                    {
+                        var shapes = new List<Shape>(Axe(-0.45f, 0.6f, 0.2f, -0.2f)) { new Segment(-0.6f, -0.65f, 0.6f, -0.65f, 0.06f) };
+                        return shapes.ToArray();
+                    }
+                case "desafio":
+                    return new Shape[] { new Segment(0f, 0.65f, 0f, -0.15f, 0.12f), new Disc(0f, -0.5f, 0.12f), new Ring(0f, 0f, 0.78f, 0.04f, 120f, 420f) };
+                case "terremoto":
+                    return new Shape[]
+                    {
+                        new Segment(-0.7f, -0.3f, 0.7f, -0.3f, 0.05f), new Segment(0f, -0.3f, -0.2f, 0.1f, 0.06f), new Segment(-0.2f, 0.1f, 0.1f, 0.35f, 0.06f),
+                        new Segment(0.1f, 0.35f, -0.05f, 0.65f, 0.05f), new Segment(-0.5f, -0.3f, -0.6f, 0.05f, 0.05f), new Segment(0.45f, -0.3f, 0.6f, 0.1f, 0.05f),
+                    };
+                case "furia_do_urso":
+                    return new Shape[]
+                    {
+                        new Segment(-0.55f, 0.6f, -0.25f, -0.6f, 0.07f), new Segment(-0.15f, 0.65f, 0.1f, -0.65f, 0.07f), new Segment(0.25f, 0.6f, 0.5f, -0.6f, 0.07f),
+                    };
+                case "colosso":
+                    {
+                        var shapes = new List<Shape>(Axe(-0.4f, -0.55f, 0.3f, 0.5f)) { new Ring(0, 0, 0.7f, 0.05f) };
+                        return shapes.ToArray();
+                    }
             }
             return new Shape[] { new Disc(0, 0, 0.3f) };
+        }
+
+        /// <summary>Machado: cabo de (x0, y0) até (x1, y1) e a lâmina em meia-lua na ponta.</summary>
+        private static Shape[] Axe(float x0, float y0, float x1, float y1)
+        {
+            var dir = new Vector2(x1 - x0, y1 - y0).normalized;
+            var side = new Vector2(dir.y, -dir.x);
+            var blade = new Vector2(x1, y1) - dir * 0.12f + side * 0.22f;
+            var angle = Mathf.Atan2(side.y, side.x) * Mathf.Rad2Deg;
+            return new Shape[]
+            {
+                new Segment(x0, y0, x1, y1, 0.06f),
+                new Ring(blade.x, blade.y, 0.24f, 0.09f, angle - 70f, angle + 70f),
+            };
         }
 
         /// <summary>Flecha de (x0, y0) até a ponta em (x1, y1): haste fina e duas farpas.</summary>

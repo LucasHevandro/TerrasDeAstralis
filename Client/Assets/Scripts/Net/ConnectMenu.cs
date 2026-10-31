@@ -687,12 +687,17 @@ namespace Game.Client.Net
             if (GUILayout.Toggle(_newClass == CharacterClass.Arcanist, " " + Loc.T("login.class_arcanist"), GUI.skin.button, GUILayout.Height(34 * scale)))
                 _newClass = CharacterClass.Arcanist;
             GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
             if (GUILayout.Toggle(_newClass == CharacterClass.Ranger, " " + Loc.T("login.class_ranger"), GUI.skin.button, GUILayout.Height(34 * scale)))
                 _newClass = CharacterClass.Ranger;
+            if (GUILayout.Toggle(_newClass == CharacterClass.Guardian, " " + Loc.T("login.class_guardian"), GUI.skin.button, GUILayout.Height(34 * scale)))
+                _newClass = CharacterClass.Guardian;
+            GUILayout.EndHorizontal();
             _newHair = ColorRow(Loc.T("login.hair"), CharacterPaint.HairColors, _newHair, scale);
             _newCloth = ColorRow(Loc.T("login.cloth"), CharacterPaint.ClothColors, _newCloth, scale);
             _newSkin = ColorRow(Loc.T("login.skin"), CharacterPaint.SkinColors, _newSkin, scale);
-            _newHead = HeadRow(_newHead, scale);
+            // O Guardião (esqueleto grande) não troca de cabeça: o penteado fica o do modelo.
+            if (_newClass != CharacterClass.Guardian) _newHead = HeadRow(_newHead, scale);
             _newHideHelmet = !GUILayout.Toggle(!_newHideHelmet, " " + Loc.T("login.show_helmet"), GUILayout.Height(24 * scale));
             GUILayout.Space(10 * scale);
             if (GUILayout.Button(Loc.T("login.create"), GUILayout.Height(38 * scale))) _ = CreateCharacterAsync();

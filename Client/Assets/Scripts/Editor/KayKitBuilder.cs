@@ -11,7 +11,7 @@ namespace Game.Client.Editor
     /// <summary>
     /// Personagens do KayKit (Kay Lousberg, CC0) no jogo: configura a importação, cria os materiais, o Animator
     /// Controller (andar/correr, 10 estilos de golpe, dano, esquiva e morte) e os prefabs que o
-    /// <see cref="VisualCatalog"/> procura: <c>Visuals/class/blade|arcanist|ranger</c> e <c>Visuals/npc/&lt;id&gt;</c>.
+    /// <see cref="VisualCatalog"/> procura: <c>Visuals/class/blade|arcanist|ranger|guardian</c> e <c>Visuals/npc/&lt;id&gt;</c>.
     /// Menu: Jogo &gt; Visuais &gt; Montar personagens KayKit (ou -executeMethod ...KayKitBuilder.Build).
     /// Os arquivos originais ficam em Assets/Art/KayKit (licenças junto).
     /// </summary>
@@ -52,6 +52,11 @@ namespace Game.Client.Editor
             ["arcanist"] = new Look { Model = "Mage", RightHand = "staff", Heads = true },
             // Ranger: o arco fica na mão esquerda, como nas animações de arco do pacote.
             ["ranger"] = new Look { Model = "Ranger", LeftHand = "bow_withString", Heads = true },
+            // Guardião: o Barbarian grande do pacote EXTRA (esqueleto Rig_Large, sem troca de cabeça), machado e escudo.
+            ["guardian"] = new Look
+            {
+                Model = "Barbarian_Large", RightHand = "axe_1handed_Large", LeftHand = "shield_round_barbarian_Large", Height = 2.3f,
+            },
         };
 
         private static readonly Dictionary<string, Look> NpcLooks = new Dictionary<string, Look>
@@ -103,8 +108,10 @@ namespace Game.Client.Editor
                 Clip("MovementAdvanced", "Running_HoldingBow"), Clip("General", "Death_A"), bowStyle: true);
             var skeleton = BuildController("Esqueleto", Clip("Special", "Skeletons_Idle"), Clip("Special", "Skeletons_Walking"),
                 Clip("MovementBasic", "Running_A"), Clip("Special", "Skeletons_Death"));
+            var guardian = BuildLargeController("Guardiao");
             foreach (var (id, look) in ClassLooks)
-                MakePrefab($"{Visuals}/class/{id}.prefab", look, materials, id == "ranger" ? ranger : controller, weaponFx: true);
+                MakePrefab($"{Visuals}/class/{id}.prefab", look, materials,
+                    id == "ranger" ? ranger : id == "guardian" ? guardian : controller, weaponFx: true);
             foreach (var (id, look) in NpcLooks) MakePrefab($"{Visuals}/npc/{id}.prefab", look, materials, controller);
             Directory.CreateDirectory($"{Visuals}/villager");
             foreach (var (id, look) in VillagerLooks) MakePrefab($"{Visuals}/villager/{id}.prefab", look, materials, controller);
@@ -451,6 +458,145 @@ namespace Game.Client.Editor
             }
             AddDeathState(machine, locomotion, dying, 0, resurrection);
             if (name != "Esqueleto") AddDeathState(machine, locomotion, Clip("General", "Death_B"), 1);
+
+            EditorUtility.SetDirty(controller);
+            return controller;
+        }
+
+        /// <summary>Animação do esqueleto grande (Rig_Large_*), que tem um conjunto menor que o Rig_Medium.</summary>
+        private static AnimationClip LargeClip(string file, string name)
+        {
+            var clip = AssetDatabase.LoadAllAssetsAtPath($"{Animations}/Rig_Large_{file}.fbx").OfType<AnimationClip>()
+                .FirstOrDefault(c => c.name == name);
+            if (clip == null) throw new System.InvalidOperationException($"Animação {name} não encontrada em Rig_Large_{file}.");
+            return clip;
+        }
+
+        /// <summary>
+        /// Animator do esqueleto grande (Guardião), com os mesmos parâmetros do <see cref="BuildController"/>. O Rig_Large
+        /// não tem magia, arco, a maioria dos gestos nem sentar: cada estilo de golpe usa um golpe corpo a corpo, só as
+        /// skills com <see cref="SkillMove.LargeSteps"/> ganham estado e, sem o parâmetro Resting, ele fica de pé na fogueira.
+        /// </summary>
+        private static AnimatorController BuildLargeController(string name)
+        {
+            var path = $"{Generated}/{name}.controller";
+            AssetDatabase.DeleteAsset(path);
+            var controller = AnimatorController.CreateAnimatorControllerAtPath(path);
+            controller.AddParameter("Speed", AnimatorControllerParameterType.Float);
+            controller.AddParameter("Attack", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("AttackKind", AnimatorControllerParameterType.Int);
+            controller.AddParameter("Hit", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("Dodge", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("Dead", AnimatorControllerParameterType.Bool);
+            controller.AddParameter(new AnimatorControllerParameter
+            {
+                name = "AttackSpeed", type = AnimatorControllerParameterType.Float, defaultFloat = 1f,
+            });
+            var machine = controller.layers[0].stateMachine;
+
+            var locomotion = controller.CreateBlendTreeInController("Locomoção", out var tree, 0);
+            tree.blendParameter = "Speed";
+            tree.useAutomaticThresholds = false;
+            tree.AddChild(LargeClip("General", "Idle_A"), 0f);
+            tree.AddChild(LargeClip("MovementBasic", "Walking_A"), 2.2f);
+            tree.AddChild(LargeClip("MovementBasic", "Running_A"), 6f);
+            machine.defaultState = locomotion;
+
+            var attacks = new (int Style, string Clip, float Seconds)[]
+            {
+                (AttackStyle.Slice, "Melee_1H_Slash", 0.55f),
+                (AttackStyle.Chop, "Melee_2H_Attack", 0.6f),
+                (AttackStyle.Stab, "Melee_1H_Stab", 0.6f),
+                (AttackStyle.Spin, "Melee_Dualwield_SlashCombo", 0.8f),
+                (AttackStyle.JumpChop, "Melee_2H_Slam", 0.8f),
+                (AttackStyle.Diagonal, "Melee_1H_Slash", 0.55f),
+                (AttackStyle.MagicShoot, "Melee_Unarmed_Punch", 0.55f),
+                (AttackStyle.MagicCast, "Melee_Unarmed_Punch", 0.6f),
+                (AttackStyle.MagicRaise, "Melee_Unarmed_Smash", 0.9f),
+                (AttackStyle.Finisher, "Melee_2H_Slam", 0.75f),
+                (AttackStyle.RangedShoot, "Melee_Unarmed_Punch", 0.6f),
+            };
+            foreach (var attack in attacks)
+            {
+                var clip = LargeClip("CombatMelee", attack.Clip);
+                var state = machine.AddState($"Golpe {attack.Style}: {attack.Clip}");
+                state.motion = clip;
+                state.speed = clip.length / attack.Seconds;
+                var enter = machine.AddAnyStateTransition(state);
+                enter.AddCondition(AnimatorConditionMode.If, 0, "Attack");
+                enter.AddCondition(AnimatorConditionMode.Equals, attack.Style, "AttackKind");
+                enter.AddCondition(AnimatorConditionMode.IfNot, 0, "Dead");
+                Quick(enter, 0.06f);
+                enter.canTransitionToSelf = true;
+                Leave(state, locomotion, 0.85f);
+            }
+
+            for (var i = 0; i < SkillMoves.All.Count; i++)
+            {
+                var move = SkillMoves.All[i];
+                if (move.LargeSteps == null) continue;
+                var kind = SkillMoves.FirstKind + i;
+                AnimatorState previous = null;
+                for (var step = 0; step < move.LargeSteps.Length; step++)
+                {
+                    var (file, clipName, seconds) = move.LargeSteps[step];
+                    var clip = LargeClip(file, clipName);
+                    var state = machine.AddState($"Skill {kind}-{step + 1}: {move.Id}");
+                    state.motion = clip;
+                    state.speed = clip.length / seconds;
+                    state.speedParameterActive = true;
+                    state.speedParameter = "AttackSpeed";
+                    if (previous == null)
+                    {
+                        var enter = machine.AddAnyStateTransition(state);
+                        enter.AddCondition(AnimatorConditionMode.If, 0, "Attack");
+                        enter.AddCondition(AnimatorConditionMode.Equals, kind, "AttackKind");
+                        enter.AddCondition(AnimatorConditionMode.IfNot, 0, "Dead");
+                        Quick(enter, 0.05f);
+                        enter.canTransitionToSelf = true;
+                    }
+                    else
+                    {
+                        var next = previous.AddTransition(state);
+                        next.hasExitTime = true;
+                        next.exitTime = 0.94f;
+                        next.duration = 0.05f;
+                        next.hasFixedDuration = true;
+                    }
+                    previous = state;
+                }
+                if (previous != null) Leave(previous, locomotion, 0.9f);
+            }
+
+            var hit = machine.AddState("Dano Hit_A");
+            hit.motion = LargeClip("General", "Hit_A");
+            hit.speed = 1.3f;
+            var toHit = machine.AddAnyStateTransition(hit);
+            toHit.AddCondition(AnimatorConditionMode.If, 0, "Hit");
+            toHit.AddCondition(AnimatorConditionMode.IfNot, 0, "Dead");
+            Quick(toHit, 0.05f);
+            Leave(hit, locomotion, 0.8f);
+
+            AddGesture(controller, machine, locomotion, "Idle2", LargeClip("General", "Idle_B"));
+            AddGesture(controller, machine, locomotion, "Cheering", LargeClip("Simulation", "Flexing"));
+
+            var dodge = machine.AddState("Esquiva");
+            dodge.motion = LargeClip("MovementAdvanced", "Dodge_Forward");
+            var toDodge = machine.AddAnyStateTransition(dodge);
+            toDodge.AddCondition(AnimatorConditionMode.If, 0, "Dodge");
+            toDodge.AddCondition(AnimatorConditionMode.IfNot, 0, "Dead");
+            Quick(toDodge, 0.04f);
+            Leave(dodge, locomotion, 0.9f);
+
+            var death = machine.AddState("Morte Death_A");
+            death.motion = LargeClip("General", "Death_A");
+            var toDeath = machine.AddAnyStateTransition(death);
+            toDeath.AddCondition(AnimatorConditionMode.If, 0, "Dead");
+            toDeath.canTransitionToSelf = false;
+            Quick(toDeath, 0.1f);
+            var revive = death.AddTransition(locomotion);
+            revive.AddCondition(AnimatorConditionMode.IfNot, 0, "Dead");
+            Quick(revive, 0.2f);
 
             EditorUtility.SetDirty(controller);
             return controller;

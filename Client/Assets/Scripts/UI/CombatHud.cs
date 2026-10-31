@@ -519,7 +519,7 @@ namespace Game.Client.UI
                 : Loc.T("skill.info", skill.BaseDamage, skill.PowerScale, skill.Range);
             var text = $"<b>{skill.Name}</b>\n<size=14>{kind} · {skill.CooldownSeconds:0.#} s</size>\n<size=13>{info}</size>";
             var extra = 0f;
-            if (skill.Id == Game.Shared.Monsters.ThreatRules.TauntSkillId)
+            if (Game.Shared.Monsters.ThreatRules.IsTaunt(skill.Id))
             {
                 text += $"\n<size=13><color=#ffd27a>{Loc.T("skill.taunt_hint")}</color></size>";
                 extra = 20f;
