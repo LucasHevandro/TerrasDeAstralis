@@ -283,3 +283,25 @@ Cada decisão importante fica registrada aqui com data e motivo, para não ser r
   direita) liberada, fora da recarga, com MP e com o alvo no alcance. Não anda até o alvo nem escolhe alvo sozinho.
 - **Só no cliente:** usa o mesmo caminho do aperto da tecla, então o servidor não muda e o protocolo também não.
 - **Teste:** o `-onlinefight` liga a opção, seleciona um coelho e confere que ele morre sem nenhum aperto.
+
+## 2026-10-30 — Quarta classe: Guardião (tank)
+
+- **Quem é:** tank corpo a corpo, com machado e escudo. Bate menos que a Lâmina, mas segura os monstros para o grupo.
+- **Por que apanha menos:** recebe 15% menos dano de monstros (`ClassInfo.DamageTakenFactor`). No PvP nada muda.
+- **Ameaça:** o dano dele vale 3× em ameaça (a Lâmina vale 2×). Tem duas provocações (`ThreatRules.IsTaunt`): o
+  **Grito de Guerra** (Nv 3, em área em volta do alvo) e o **Desafio** (Nv 12, de 10 m, sem custo de MP, para puxar um
+  monstro de longe). O Giro de Lâmina continua provocando.
+- **Começo:** Força 11, Destreza 5 e Inteligência 2 (o mesmo total de 18), com o Machado de Ferro.
+- **Machados:** Ferro (Nv 1), Aço Negro (Nv 10) e Astralita (Nv 20). Têm uns 80% do ataque da espada do mesmo grau e,
+  como o escudo vem junto, dão defesa e HP (10/40/90 de defesa e 50/200/450 de HP). Caem nos mesmos lugares que os
+  arcos.
+- **Skills:** Golpe de Machado (1), Grito de Guerra (3, área, provoca), Investida de Escudo (5), Golpe Esmagador (8),
+  Desafio (12, provoca) e Terremoto (15, área) com o rank 2, e Fúria do Urso (20, área) e Colosso (25) com o rank 3. A
+  rota da classe é a **Muralha** (físico, físico, físico; +10%).
+- **Modelo:** o `Barbarian_Large` do KayKit Adventurers EXTRA (comprado em 2026-10-30, CC0), com o machado e o escudo
+  grandes do pacote, 2,3 m de altura. Ele usa outro esqueleto (Rig_Large), então tem um Animator próprio
+  (`Guardiao.controller`) com as 6 animações do Rig_Large do `KayKit_Character_Animations_1.1`.
+- **Limites do Rig_Large:** não tem sentar, a maioria dos gestos nem as cabeças dos outros aventureiros. Na fogueira ele
+  fica de pé, e a criação de personagem esconde a escolha de penteado. O elmo dele é o chapéu de urso.
+- **Testes:** o servidor aceita `--guest-class guardian`.
+- **Protocolo:** nenhuma mensagem mudou (a classe vai como número), então continua o 22.

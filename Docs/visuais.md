@@ -12,7 +12,7 @@ Crie um **prefab** com o nome exato do id dentro de `Client/Assets/Resources/Vis
 |---|---|---|
 | Monstros e chefes | `Visuals/monster/` | `coelho_saltador`, `lobo_cinzento`, `guardiao_das_ruinas`, `senhor_da_cripta` |
 | NPCs | `Visuals/npc/` | `anciao_doran`, `ferreira_ilsa`, `guarda_volumes_bento`, `mercadora_lia`, `guardia_selene` |
-| Personagem do jogador (por classe) | `Visuals/class/` | `blade` (Lâmina), `arcanist` (Arcanista), `ranger` (Ranger) |
+| Personagem do jogador (por classe) | `Visuals/class/` | `blade` (Lâmina), `arcanist` (Arcanista), `ranger` (Ranger), `guardian` (Guardião) |
 | Itens no chão | `Visuals/item/` | `espada_ferro`, `pocao_hp_p`, `nucleo_baixo` |
 
 Os ids de todos os monstros, NPCs e itens estão no arquivo de textos `Shared/Game.Shared/Resources/Locales/pt-BR.txt`
@@ -84,7 +84,8 @@ As classes e os NPCs usam os pacotes grátis **KayKit** de Kay Lousberg (www.kay
 | Pacote (versão grátis) | O que usamos |
 |---|---|
 | Character Pack: Adventurers 2.0 | Knight, Mage, Barbarian, Rogue, Rogue_Hooded e Ranger, além de armas e acessórios |
-| Character Animations 1.1 | Rig_Medium: General, MovementBasic, MovementAdvanced, CombatMelee, CombatRanged e Special |
+| Character Pack: Adventurers 2.0 EXTRA (pago) | Barbarian_Large (Guardião), `axe_1handed_Large` e `shield_round_barbarian_Large`. Os arquivos ficam em Downloads (`KayKit_Adventurers_2.0_EXTRA` e `_SOURCE`, com os `.blend`) |
+| Character Animations 1.1 | Rig_Medium: General, MovementBasic, MovementAdvanced, CombatMelee, CombatRanged e Special. Rig_Large (Guardião): General, MovementBasic, MovementAdvanced, CombatMelee, Simulation e Special |
 | Character Pack: Skeletons 1.1 | Esqueletos (Warrior, Mage, Minion e Rogue) e as armas deles, para a etapa dos monstros |
 
 Para gerar tudo: **Jogo > Visuais > Montar personagens KayKit**, ou `-executeMethod Game.Client.Editor.KayKitBuilder.Build`. O construtor:
@@ -98,6 +99,7 @@ Para gerar tudo: **Jogo > Visuais > Montar personagens KayKit**, ou `-executeMet
 | `Visuals/class/blade` (Lâmina) | Knight | espada e escudo |
 | `Visuals/class/arcanist` (Arcanista) | Mage | cajado |
 | `Visuals/class/ranger` (Ranger) | Ranger | arco na mão esquerda |
+| `Visuals/class/guardian` (Guardião) | Barbarian_Large | machado e escudo grandes |
 | `Visuals/npc/anciao_doran` | Rogue_Hooded | livro aberto |
 | `Visuals/npc/escriva_marta` (mercado) | Rogue | livro aberto |
 | `Visuals/npc/ferreira_ilsa` | Barbarian | machado |
