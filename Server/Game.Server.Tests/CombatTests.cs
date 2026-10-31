@@ -164,6 +164,31 @@ public class CombatTests
     }
 
     [Fact]
+    public void Guardiao_nasce_com_machado_e_apanha_menos_dos_monstros()
+    {
+        int Taken(CharacterClass characterClass)
+        {
+            var outbox = new FakeOutbox();
+            var spawn = new SpawnDefinition { Data = Dummy(aggressive: true, attack: 1000), CenterX = 0, CenterZ = 1.5f, Count = 1, Radius = 0 };
+            var world = new GameWorld(outbox, new[] { spawn }, new FixedRandom(0.5), eliteChance: 0) { GuestClass = characterClass };
+            var player = world.AddPlayer("Ana", 0);
+            player.Movement.Teleport(0, 0, 0);
+            if (characterClass == CharacterClass.Guardian)
+            {
+                Assert.Equal("machado_ferro", player.Equipment[EquipSlot.Weapon]?.ItemId);
+                Assert.Equal("golpe_de_machado", player.Skills[0].Id);
+            }
+            for (var t = 0.05; t <= 0.7; t += 0.05) world.Tick(t);
+            return player.Hp.Max - player.Hp.Current;
+        }
+
+        var blade = Taken(CharacterClass.Blade);
+        var guardian = Taken(CharacterClass.Guardian);
+        Assert.True(blade > 0);
+        Assert.True(guardian <= blade * 0.86, $"Guardião levou {guardian}, Lâmina {blade}");
+    }
+
+    [Fact]
     public void Quem_ajudou_a_matar_sem_grupo_tambem_ganha_xp_mas_nao_o_alz()
     {
         var (world, outbox, ana, monster) = Setup(Dummy(hp: 100_000));

@@ -39,7 +39,7 @@ public sealed record ServerOptions
     /// <summary>Todo monstro comum do mundo aberto nasce elite (teste do visual).</summary>
     public bool AllElites { get; init; }
 
-    /// <summary>Classe dos convidados (testes da Ranger e do Arcanista com o exe).</summary>
+    /// <summary>Classe dos convidados (testes das outras classes com o exe).</summary>
     public CharacterClass GuestClass { get; init; } = CharacterClass.Blade;
 
     /// <summary>Segundos para mandar o Hello depois de conectar (senão a conexão cai).</summary>

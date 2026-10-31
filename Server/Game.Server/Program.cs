@@ -16,7 +16,7 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 //   --dungeon-test dungeon fácil e sem nível mínimo (bots de nível 1 conseguem terminar)
 //   --dungeon-min-level N  nível mínimo das dungeons (1 = qualquer nível; 0 = o do catálogo), dificuldade normal
 //   --elites       todo monstro comum do mundo aberto nasce elite (para testar o visual)
-//   --guest-class c convidados entram com a classe c (blade, arcanist ou ranger; para testes)
+//   --guest-class c convidados entram com a classe c (blade, arcanist, ranger ou guardian; para testes)
 //   --arena-size N jogadores por time na arena (padrão 5; 1 para testar a dois)
 //   --stats N      métricas de desempenho a cada N segundos
 //   --gm a,b       contas tratadas como GM nesta execução (testes locais; em produção use --set-gm)

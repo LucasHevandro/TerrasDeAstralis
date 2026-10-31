@@ -573,15 +573,35 @@ public class ProgressionWorldTests
         var mage = world.AddPlayer("", 0, null,
             AuthService.InitialCharacter(CharacterClass.Arcanist, NewUid) with { Id = 8, AccountId = 2, Name = "Bia" });
         mage.Movement.Teleport(0, 0, 0);
-        blade.LearnedSkills.Add(ThreatRules.TauntSkillId);
+        blade.LearnedSkills.Add("giro_de_lamina");
         monster.Threat[mage.Id] = 50_000; // a Bia já irritou muito
 
-        var giro = blade.Skills.Select((s, i) => (s, i)).First(x => x.s.Id == ThreatRules.TauntSkillId).i;
+        var giro = blade.Skills.Select((s, i) => (s, i)).First(x => x.s.Id == "giro_de_lamina").i;
         world.Handle(blade.Id, new UseSkill { Slot = (byte)giro, TargetId = monster.Id }, 1);
         world.Tick(1.1);
 
         Assert.Equal(blade.Id, monster.AggroPlayerId);
         Assert.True(monster.Threat[blade.Id] >= 50_000 * ThreatRules.TauntMargin);
+    }
+
+    [Fact]
+    public void Grito_de_guerra_do_guardiao_provoca_e_puxa_o_monstro()
+    {
+        var (world, _, guardian) = Setup(Dummy(hp: 1_000_000),
+            record: AuthService.InitialCharacter(CharacterClass.Guardian, NewUid) with { Id = 7, AccountId = 1, Name = "Ana" });
+        var monster = world.Monsters.Single();
+        var mage = world.AddPlayer("", 0, null,
+            AuthService.InitialCharacter(CharacterClass.Arcanist, NewUid) with { Id = 8, AccountId = 2, Name = "Bia" });
+        mage.Movement.Teleport(0, 0, 0);
+        guardian.LearnedSkills.Add("grito_de_guerra");
+        monster.Threat[mage.Id] = 50_000;
+
+        var grito = guardian.Skills.Select((s, i) => (s, i)).First(x => x.s.Id == "grito_de_guerra").i;
+        world.Handle(guardian.Id, new UseSkill { Slot = (byte)grito, TargetId = monster.Id }, 1);
+        world.Tick(1.1);
+
+        Assert.Equal(guardian.Id, monster.AggroPlayerId);
+        Assert.True(monster.Threat[guardian.Id] >= 50_000 * ThreatRules.TauntMargin);
     }
 
     [Fact]

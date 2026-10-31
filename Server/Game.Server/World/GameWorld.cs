@@ -644,7 +644,7 @@ public sealed partial class GameWorld
 
     private static EntitySpawned SpawnMessage(ServerPlayer player) => new()
     {
-        // Jogadores levam a classe no TypeId ("blade", "arcanist" ou "ranger"): o cliente escolhe o modelo por ela.
+        // Jogadores levam a classe no TypeId ("blade", "arcanist", "ranger" ou "guardian"): o cliente escolhe o modelo por ela.
         Id = player.Id, Kind = EntityKind.Player, TypeId = ClassInfo.TypeId(player.Class),
         Name = player.Name, Level = player.Progress.Level, MaxHp = player.Hp.Max, X = player.X, Z = player.Z,
         WeaponId = player.Look.WeaponId, WeaponUpgrade = (byte)player.Look.Upgrade, ArmorGrade = (byte)player.Look.ArmorGrade,

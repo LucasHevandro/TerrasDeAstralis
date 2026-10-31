@@ -354,7 +354,9 @@ public sealed partial class GameWorld
 
         var hit = DamageFormula.Calculate(
             new DamageInput(baseDamage, monster.Data.AttackPower, 1.0, 0.05, 1.5, player.Stats.Defense), _random);
-        var dealt = -player.Hp.Add(-(monster.IsElite ? EliteRules.Damage(hit.Amount) : hit.Amount));
+        var amount = monster.IsElite ? EliteRules.Damage(hit.Amount) : hit.Amount;
+        amount = (int)Math.Round(amount * Game.Shared.Accounts.ClassInfo.DamageTakenFactor(player.Class)); // o Guardião apanha menos
+        var dealt = -player.Hp.Add(-amount);
         player.StatsDirty = true;
         player.LastCombatAt = now;
         player.Resting = false;
@@ -451,7 +453,7 @@ public sealed partial class GameWorld
     private static void AddThreat(ServerMonster monster, ServerPlayer player, int dealt, byte source)
     {
         var threat = monster.Threat.GetValueOrDefault(player.Id) + ThreatRules.ForHit(dealt, player.Class);
-        var taunt = source < player.Skills.Count && player.Skills[source].Id == ThreatRules.TauntSkillId;
+        var taunt = source < player.Skills.Count && ThreatRules.IsTaunt(player.Skills[source].Id);
         if (taunt)
         {
             var top = monster.Threat.Where(t => t.Key != player.Id).Select(t => t.Value).DefaultIfEmpty(0).Max();
