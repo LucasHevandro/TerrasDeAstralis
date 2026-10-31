@@ -26,7 +26,7 @@ tem a estrutura e como rodar, e `Docs/` tem as decisões, o balanceamento, os vi
   `Client/` (Unity), `Tools/` (Bots, Balance, Launcher, instalador, publicar) e `deploy/` (VPS).
 - **Testes:** `dotnet test Game.slnx -c Release` (hoje são 252 no Shared e 208 no Servidor). Os testes de textos
   exigem chaves literais no código: nada de `"login.head_" + i`, use um array de chaves literais.
-- **Protocolo:** `Shared/Game.Shared/Net/Messages.cs`, `Protocol.Version = 21`. Se mudar alguma mensagem, suba a
+- **Protocolo:** `Shared/Game.Shared/Net/Messages.cs`, `Protocol.Version = 22`. Se mudar alguma mensagem, suba a
   versão e atualize o cliente e o servidor juntos. O `FuzzTests` conta os tipos de mensagem.
 - **Migrações:** `cd Server/Game.Server && dotnet ef migrations add Nome -o Persistence/Migrations`.
 - **Textos:** `Shared/Game.Shared/Resources/Locales/pt-BR.txt`, lidos por `Loc.T("chave", args)`.
@@ -39,7 +39,8 @@ tem a estrutura e como rodar, e `Docs/` tem as decisões, o balanceamento, os vi
   instância aborta.
 - **Métodos de build:**
   - `Game.Client.Editor.PrototypeBuild.BuildWindows`: gera `Client/Builds/Windows/TerrasDeAstralis.exe` e aplica o
-    ícone.
+    ícone. Antes, ele roda o `KayKitBuilder.Build`, então todo build refaz os prefabs: confira o `git status` e
+    reverta o que não era para mudar antes de commitar.
   - `Game.Client.Editor.KayKitBuilder.Build`: refaz todos os prefabs. Depois, volte com `git checkout` o que não
     era para mudar (npc, monstro, aldeão e controllers) e commite só o que importa.
   - `Game.Client.Editor.GameIcon.Generate`: refaz o brasão em `Assets/Art/Icone`.
