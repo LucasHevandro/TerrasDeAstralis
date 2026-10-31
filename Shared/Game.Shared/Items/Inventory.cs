@@ -204,6 +204,7 @@ namespace Game.Shared.Items
         {
             CharacterClass.Arcanist => new Attributes { Strength = 3, Dexterity = 5, Intelligence = 10 },
             CharacterClass.Ranger => new Attributes { Strength = 8, Dexterity = 8, Intelligence = 2 },
+            CharacterClass.Guardian => new Attributes { Strength = 11, Dexterity = 5, Intelligence = 2 },
             _ => new Attributes { Strength = 10, Dexterity = 6, Intelligence = 2 },
         };
 

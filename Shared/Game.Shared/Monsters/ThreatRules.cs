@@ -6,14 +6,15 @@ namespace Game.Shared.Monsters
     /// <summary>
     /// Ameaça: cada monstro guarda quanto cada jogador o irritou e persegue quem tem mais. O dano conta vezes o fator da
     /// classe (a Lâmina, que aguenta apanhar, puxa o dobro), e o monstro só troca de alvo quando alguém passa bem à frente
-    /// do alvo atual: assim ele não fica indo e voltando entre dois jogadores. A provocação (Giro de Lâmina) põe a Lâmina
-    /// acima de todos de uma vez. A tabela zera quando o monstro volta para casa ou morre.
+    /// do alvo atual: assim ele não fica indo e voltando entre dois jogadores. A provocação (Giro de Lâmina, Grito de
+    /// Guerra e Desafio) põe quem a usou acima de todos de uma vez. A tabela zera quando o monstro volta para casa ou morre.
     /// </summary>
     public static class ThreatRules
     {
         /// <summary>Quanto o dano de cada classe vira ameaça.</summary>
         public static double ClassFactor(CharacterClass characterClass) => characterClass switch
         {
+            CharacterClass.Guardian => 3.0,
             CharacterClass.Blade => 2.0,
             CharacterClass.Arcanist => 0.8,
             _ => 1.0,
@@ -26,8 +27,10 @@ namespace Game.Shared.Monsters
         /// <summary>Até onde (do monstro) conta como "perto" para a troca de alvo.</summary>
         public const float MeleeRange = 4f;
 
-        /// <summary>Skill de provocação da Lâmina: fica acima do maior da tabela por esta margem.</summary>
-        public const string TauntSkillId = "giro_de_lamina";
+        /// <summary>Skills de provocação (da Lâmina e do Guardião): quem usa fica acima do maior da tabela por esta margem.</summary>
+        public static bool IsTaunt(string skillId) =>
+            skillId == "giro_de_lamina" || skillId == "grito_de_guerra" || skillId == "desafio";
+
         public const double TauntMargin = 1.2;
 
         /// <summary>Ameaça de quem puxou a matilha (os lobos chamados começam irritados com ele).</summary>

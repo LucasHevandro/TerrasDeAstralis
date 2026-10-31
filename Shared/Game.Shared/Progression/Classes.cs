@@ -27,7 +27,7 @@ namespace Game.Shared.Progression
     }
 
     /// <summary>
-    /// As três classes: 8 skills cada, liberadas por nível e pelas missões de rank, e uma rota de combo
+    /// As quatro classes: 8 skills cada, liberadas por nível e pelas missões de rank, e uma rota de combo
     /// própria. Números provisórios até a planilha.
     /// </summary>
     public static class ClassCatalog
@@ -75,6 +75,7 @@ namespace Game.Shared.Progression
         {
             CharacterClass.Arcanist => Arcanist,
             CharacterClass.Ranger => Ranger,
+            CharacterClass.Guardian => Guardian,
             _ => Blade,
         };
 
@@ -86,6 +87,7 @@ namespace Game.Shared.Progression
         {
             CharacterClass.Arcanist => new ComboRoute("sobrecarga", 0.10, SkillKind.Magical, SkillKind.Magical, SkillKind.Magical),
             CharacterClass.Ranger => new ComboRoute("rajada_certeira", 0.10, SkillKind.Physical, SkillKind.Physical, SkillKind.Physical),
+            CharacterClass.Guardian => new ComboRoute("muralha", 0.10, SkillKind.Physical, SkillKind.Physical, SkillKind.Physical),
             _ => new ComboRoute("lamina_runica", 0.20, SkillKind.Physical, SkillKind.Magical, SkillKind.Physical),
         };
 
@@ -132,6 +134,22 @@ namespace Game.Shared.Progression
             new ClassSkill(new SkillData("flecha_flamejante", SkillKind.Physical, 360, 12f, 7f, areaRadius: 3f, mpCost: 100, castSeconds: 0.9f, powerScale: 1.7f), 15, RankTwoQuestId),
             new ClassSkill(new SkillData("saraivada", SkillKind.Physical, 430, 11f, 8f, areaRadius: 5f, mpCost: 110, castSeconds: 1.1f, powerScale: 2.0f), 20, RankThreeQuestId),
             new ClassSkill(new SkillData("tiro_do_falcao", SkillKind.Physical, 680, 14f, 18f, mpCost: 180, castSeconds: 1.35f, powerScale: 3.1f), 25, RankThreeQuestId),
+        };
+
+        /// <summary>
+        /// Guardião: tank com machado e escudo. Bate menos que a Lâmina, mas puxa mais ameaça, apanha menos e tem duas
+        /// provocações: o Grito de Guerra (em área, em volta do alvo) e o Desafio (de longe, para puxar um monstro).
+        /// </summary>
+        private static readonly IReadOnlyList<ClassSkill> Guardian = new List<ClassSkill>
+        {
+            new ClassSkill(new SkillData("golpe_de_machado", SkillKind.Physical, 110, 2.5f, 0.5f, castSeconds: 0.5f), 1),
+            new ClassSkill(new SkillData("grito_de_guerra", SkillKind.Physical, 60, 3f, 8f, areaRadius: 5f, mpCost: 20, castSeconds: 0.6f, powerScale: 0.8f), 3),
+            new ClassSkill(new SkillData("investida_de_escudo", SkillKind.Physical, 150, 2.5f, 2f, mpCost: 15, castSeconds: 0.55f, powerScale: 1.5f), 5),
+            new ClassSkill(new SkillData("golpe_esmagador", SkillKind.Physical, 190, 2.5f, 3f, mpCost: 25, castSeconds: 0.75f, powerScale: 1.9f), 8),
+            new ClassSkill(new SkillData("desafio", SkillKind.Physical, 80, 10f, 6f, castSeconds: 0.5f), 12, RankTwoQuestId),
+            new ClassSkill(new SkillData("terremoto", SkillKind.Physical, 240, 3f, 6f, areaRadius: 4.5f, mpCost: 45, castSeconds: 0.85f, powerScale: 1.5f), 15, RankTwoQuestId),
+            new ClassSkill(new SkillData("furia_do_urso", SkillKind.Physical, 340, 3f, 10f, areaRadius: 5f, mpCost: 80, castSeconds: 1.2f, powerScale: 2.0f), 20, RankThreeQuestId),
+            new ClassSkill(new SkillData("colosso", SkillKind.Physical, 520, 2.5f, 15f, mpCost: 100, castSeconds: 1.0f, powerScale: 2.4f), 25, RankThreeQuestId),
         };
     }
 

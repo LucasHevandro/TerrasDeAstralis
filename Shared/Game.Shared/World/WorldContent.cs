@@ -148,7 +148,7 @@ namespace Game.Shared.World
                     new DropEntry("pocao_mp_p", ItemRarity.Common, 0.1),
                     new DropEntry("nucleo_baixo", ItemRarity.Rare, 0.03),
                     Equip("luvas_ferro", 0.03), Equip("botas_ferro", 0.03), Equip("espada_ferro", 0.02),
-                    Equip("cajado_ferro", 0.02), Equip("arco_ferro", 0.02), Equip("pedra_vigor", 0.01)),
+                    Equip("cajado_ferro", 0.02), Equip("arco_ferro", 0.02), Equip("machado_ferro", 0.02), Equip("pedra_vigor", 0.01)),
             }),
 
             // Lobos-alfa no norte dos Campos: a ponte do Nv9-10 até os javalis.
@@ -187,7 +187,7 @@ namespace Game.Shared.World
                     new DropEntry("veneno", ItemRarity.Uncommon, 0.2),
                     new DropEntry("nucleo_medio", ItemRarity.Rare, 0.04),
                     Equip("luvas_aco_negro", 0.03), Equip("anel_aco_negro", 0.02), Equip("espada_aco_negro", 0.015),
-                    Equip("cajado_aco_negro", 0.015), Equip("arco_aco_negro", 0.015)),
+                    Equip("cajado_aco_negro", 0.015), Equip("arco_aco_negro", 0.015), Equip("machado_aco_negro", 0.015)),
             }),
 
             // Aranhas-rainhas na borda da Mata, no caminho das Ruínas: a ponte do Nv19-20 até os golens.
@@ -226,7 +226,7 @@ namespace Game.Shared.World
                     new DropEntry("essencia", ItemRarity.Uncommon, 0.4),
                     new DropEntry("nucleo_alto", ItemRarity.Rare, 0.05),
                     Equip("luvas_astralita", 0.02), Equip("anel_astralita", 0.015), Equip("espada_astralita", 0.01),
-                    Equip("cajado_astralita", 0.01), Equip("arco_astralita", 0.01)),
+                    Equip("cajado_astralita", 0.01), Equip("arco_astralita", 0.01), Equip("machado_astralita", 0.01)),
             }),
 
             Spawn(-28, 144, 6, 10, new MonsterData
@@ -238,7 +238,7 @@ namespace Game.Shared.World
                 Drops = new DropTable(150, 300,
                     new DropEntry("essencia", ItemRarity.Uncommon, 0.3),
                     new DropEntry("nucleo_alto", ItemRarity.Rare, 0.07),
-                    Equip("armadura_astralita", 0.02), Equip("espada_astralita", 0.012), Equip("cajado_astralita", 0.012), Equip("arco_astralita", 0.012),
+                    Equip("armadura_astralita", 0.02), Equip("espada_astralita", 0.012), Equip("cajado_astralita", 0.012), Equip("arco_astralita", 0.012), Equip("machado_astralita", 0.012),
                     Equip("pedra_precisao", 0.015)),
             }),
 
@@ -268,7 +268,7 @@ namespace Game.Shared.World
                     Drops = new DropTable(2000, 4000,
                         new DropEntry("nucleo_alto", ItemRarity.Rare, 0.6, 1, 3),
                         new DropEntry("fragmento_guardiao", ItemRarity.Epic, 0.25),
-                        Equip("espada_astralita", 0.25), Equip("cajado_astralita", 0.25), Equip("arco_astralita", 0.25),
+                        Equip("espada_astralita", 0.25), Equip("cajado_astralita", 0.25), Equip("arco_astralita", 0.25), Equip("machado_astralita", 0.25),
                         Equip("armadura_astralita", 0.3)),
                 },
             },

@@ -26,6 +26,7 @@ public class CatalogTests
         Assert.Equal(3, equipment.Count(i => i.RequiredClass == CharacterClass.Blade));
         Assert.Equal(3, equipment.Count(i => i.RequiredClass == CharacterClass.Arcanist));
         Assert.Equal(3, equipment.Count(i => i.RequiredClass == CharacterClass.Ranger));
+        Assert.Equal(3, equipment.Count(i => i.RequiredClass == CharacterClass.Guardian));
     }
 
     [Fact]
@@ -34,6 +35,7 @@ public class CatalogTests
         var total = Attributes.StartingFor(CharacterClass.Blade).Total;
         Assert.Equal(total, Attributes.StartingFor(CharacterClass.Ranger).Total);
         Assert.Equal(total, Attributes.StartingFor(CharacterClass.Arcanist).Total);
+        Assert.Equal(total, Attributes.StartingFor(CharacterClass.Guardian).Total);
     }
 
     [Fact]

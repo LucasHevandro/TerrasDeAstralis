@@ -207,6 +207,11 @@ namespace Game.Shared.Items
             list.Add(Weapon("arco_aco_negro", 2, 10, CharacterClass.Ranger, atk: 54, perLevel: 7, crit: 3));
             list.Add(Weapon("arco_astralita", 3, 20, CharacterClass.Ranger, atk: 100, perLevel: 13, crit: 4));
 
+            // ===== Machados do Guardião (menos ataque que a espada; o escudo junto dá defesa e HP) =====
+            list.Add(Weapon("machado_ferro", 1, 1, CharacterClass.Guardian, atk: 20, perLevel: 3, defense: 10, hp: 50));
+            list.Add(Weapon("machado_aco_negro", 2, 10, CharacterClass.Guardian, atk: 48, perLevel: 6, defense: 40, hp: 200));
+            list.Add(Weapon("machado_astralita", 3, 20, CharacterClass.Guardian, atk: 90, perLevel: 11, defense: 90, hp: 450));
+
             // ===== Armaduras e acessórios (todas as classes) =====
             var grades = new[] { (1, 1, "ferro"), (2, 10, "aco_negro"), (3, 20, "astralita") };
             foreach (var (grade, level, key) in grades)
@@ -299,11 +304,11 @@ namespace Game.Shared.Items
         }
 
         private static ItemDefinition Weapon(string id, int grade, int level, CharacterClass characterClass,
-            int atk = 0, int magic = 0, int perLevel = 0, float crit = 0) => new ItemDefinition
+            int atk = 0, int magic = 0, int perLevel = 0, float crit = 0, int defense = 0, int hp = 0) => new ItemDefinition
         {
             Id = id, Kind = ItemKind.Equipment, Slot = EquipSlot.Weapon, Grade = grade, RequiredLevel = level,
             RequiredClass = characterClass, Rarity = grade == 3 ? ItemRarity.Rare : grade == 2 ? ItemRarity.Uncommon : ItemRarity.Common,
-            Stats = new StatBlock { AttackPower = atk, MagicPower = magic, CritPercent = crit },
+            Stats = new StatBlock { AttackPower = atk, MagicPower = magic, CritPercent = crit, Defense = defense, MaxHp = hp },
             UpgradeStats = new StatBlock { AttackPower = atk > 0 ? perLevel : 0, MagicPower = magic > 0 ? perLevel : 0 },
         };
 

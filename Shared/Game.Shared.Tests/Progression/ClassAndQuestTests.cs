@@ -1,3 +1,4 @@
+using Game.Shared.Monsters;
 using System.Collections.Generic;
 using System.Linq;
 using Game.Shared.Accounts;
@@ -19,6 +20,7 @@ public class ClassTests
     [InlineData(CharacterClass.Blade)]
     [InlineData(CharacterClass.Arcanist)]
     [InlineData(CharacterClass.Ranger)]
+    [InlineData(CharacterClass.Guardian)]
     public void CadaClasseTemOitoSkillsUnicasEValidas(CharacterClass characterClass)
     {
         var skills = ClassCatalog.SkillsFor(characterClass);
@@ -48,7 +50,15 @@ public class ClassTests
         var ranger = ClassCatalog.SkillsFor(CharacterClass.Ranger);
         Assert.True(ranger.Count(s => s.Skill.Kind == SkillKind.Physical) > ranger.Count / 2);
         Assert.True(ranger.Average(s => s.Skill.Range) > blade.Average(s => s.Skill.Range));
-        Assert.Equal(3, ClassInfo.All.Select(c => ClassCatalog.RouteFor(c).Name).Distinct().Count());
+        Assert.Equal(ClassInfo.All.Length, ClassInfo.All.Select(c => ClassCatalog.RouteFor(c).Name).Distinct().Count());
+
+        // Guardião: corpo a corpo e físico, com duas provocações e menos dano de monstros.
+        var guardian = ClassCatalog.SkillsFor(CharacterClass.Guardian);
+        Assert.True(guardian.All(s => s.Skill.Kind == SkillKind.Physical));
+        Assert.Equal(2, guardian.Count(s => ThreatRules.IsTaunt(s.Skill.Id)));
+        Assert.True(ThreatRules.ClassFactor(CharacterClass.Guardian) > ThreatRules.ClassFactor(CharacterClass.Blade));
+        Assert.True(ClassInfo.DamageTakenFactor(CharacterClass.Guardian) < 1);
+        Assert.Equal(1, ClassInfo.DamageTakenFactor(CharacterClass.Blade));
     }
 
     [Fact]
@@ -70,6 +80,7 @@ public class ClassTests
         Assert.NotEmpty(ClassCatalog.UnlockedSkills(CharacterClass.Blade, 1, None));
         Assert.NotEmpty(ClassCatalog.UnlockedSkills(CharacterClass.Arcanist, 1, None));
         Assert.NotEmpty(ClassCatalog.UnlockedSkills(CharacterClass.Ranger, 1, None));
+        Assert.NotEmpty(ClassCatalog.UnlockedSkills(CharacterClass.Guardian, 1, None));
     }
 
     [Fact]
@@ -133,6 +144,7 @@ public class ClassTests
     [InlineData(CharacterClass.Blade)]
     [InlineData(CharacterClass.Arcanist)]
     [InlineData(CharacterClass.Ranger)]
+    [InlineData(CharacterClass.Guardian)]
     public void EscalaDePoderCresceComONivelDaSkill(CharacterClass characterClass)
     {
         var skills = ClassCatalog.SkillsFor(characterClass);
@@ -165,6 +177,7 @@ public class ClassTests
         Assert.Equal(0.20, ClassCatalog.RouteFor(CharacterClass.Blade).DamageBonus);
         Assert.Equal(0.10, ClassCatalog.RouteFor(CharacterClass.Arcanist).DamageBonus);
         Assert.Equal(0.10, ClassCatalog.RouteFor(CharacterClass.Ranger).DamageBonus);
+        Assert.Equal(0.10, ClassCatalog.RouteFor(CharacterClass.Guardian).DamageBonus);
     }
 
     [Fact]
@@ -339,6 +352,7 @@ public class LevelingBalanceTests
     [InlineData(CharacterClass.Blade)]
     [InlineData(CharacterClass.Arcanist)]
     [InlineData(CharacterClass.Ranger)]
+    [InlineData(CharacterClass.Guardian)]
     public void Do_um_ao_trinta_leva_de_cinco_a_dez_horas(CharacterClass characterClass)
     {
         var steps = LevelingSimulation.Run(characterClass);

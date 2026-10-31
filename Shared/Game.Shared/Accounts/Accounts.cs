@@ -17,6 +17,9 @@ namespace Game.Shared.Accounts
 
         /// <summary>Ranger: arqueira, à distância com o arco.</summary>
         Ranger = 2,
+
+        /// <summary>Guardião: tank corpo a corpo, com machado e escudo.</summary>
+        Guardian = 3,
     }
 
     /// <summary>
@@ -25,13 +28,14 @@ namespace Game.Shared.Accounts
     /// </summary>
     public static class ClassInfo
     {
-        public static readonly CharacterClass[] All = { CharacterClass.Blade, CharacterClass.Arcanist, CharacterClass.Ranger };
+        public static readonly CharacterClass[] All = { CharacterClass.Blade, CharacterClass.Arcanist, CharacterClass.Ranger, CharacterClass.Guardian };
 
         /// <summary>Id do modelo da classe (Visuals/class/&lt;id&gt;) e o TypeId do EntitySpawned do jogador.</summary>
         public static string TypeId(CharacterClass characterClass) => characterClass switch
         {
             CharacterClass.Arcanist => "arcanist",
             CharacterClass.Ranger => "ranger",
+            CharacterClass.Guardian => "guardian",
             _ => "blade",
         };
 
@@ -40,6 +44,7 @@ namespace Game.Shared.Accounts
         {
             "arcanist" => CharacterClass.Arcanist,
             "ranger" => CharacterClass.Ranger,
+            "guardian" => CharacterClass.Guardian,
             _ => CharacterClass.Blade,
         };
 
@@ -48,6 +53,7 @@ namespace Game.Shared.Accounts
         {
             CharacterClass.Arcanist => "class.arcanist",
             CharacterClass.Ranger => "class.ranger",
+            CharacterClass.Guardian => "class.guardian",
             _ => "class.blade",
         };
 
@@ -56,16 +62,25 @@ namespace Game.Shared.Accounts
         {
             CharacterClass.Arcanist => "cajado_ferro",
             CharacterClass.Ranger => "arco_ferro",
+            CharacterClass.Guardian => "machado_ferro",
             _ => "espada_ferro",
         };
 
-        /// <summary>Começo do id das armas da classe (espada_, cajado_ ou arco_ + grau).</summary>
+        /// <summary>Começo do id das armas da classe (espada_, cajado_, arco_ ou machado_ + grau).</summary>
         public static string WeaponPrefix(CharacterClass characterClass) => characterClass switch
         {
             CharacterClass.Arcanist => "cajado_",
             CharacterClass.Ranger => "arco_",
+            CharacterClass.Guardian => "machado_",
             _ => "espada_",
         };
+
+        /// <summary>
+        /// Quanto do dano dos monstros a classe recebe (1 = tudo). O Guardião segura o monstro para o grupo, então
+        /// apanha menos.
+        /// </summary>
+        public static double DamageTakenFactor(CharacterClass characterClass) =>
+            characterClass == CharacterClass.Guardian ? 0.85 : 1.0;
     }
 
     /// <summary>Regras de conta, senha e nome de personagem, iguais no cliente (aviso na hora) e no servidor (decisão).</summary>
@@ -84,6 +99,7 @@ namespace Game.Shared.Accounts
             CharacterClass.Blade => Loc.T("class.blade"),
             CharacterClass.Arcanist => Loc.T("class.arcanist"),
             CharacterClass.Ranger => Loc.T("class.ranger"),
+            CharacterClass.Guardian => Loc.T("class.guardian"),
             _ => Loc.T("class.unknown"),
         };
 
