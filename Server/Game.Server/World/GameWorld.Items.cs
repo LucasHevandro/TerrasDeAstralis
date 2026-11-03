@@ -191,6 +191,9 @@ public sealed partial class GameWorld
         }
         if (--item.Quantity == 0) player.Bag.Take(slot);
         player.StatsDirty = true;
+        // A bolsa e a recarga mudaram: o inventário aberto e a barra de atalhos acompanham (também no MP automático).
+        player.InventoryDirty = true;
+        player.SheetDirty = true;
     }
 
     /// <summary>

@@ -345,7 +345,7 @@ public sealed partial class GameWorld
         if (move.Sequence <= player.LastMoveSequence && player.LastMoveSequence != 0) return;
         player.LastMoveSequence = move.Sequence;
 
-        if (move.Dodging && now >= player.NextDodgeAt)
+        if (move.Dodging && now >= player.NextDodgeAt && PlayerRules.DodgeUnlocked(player.Progress.Level))
         {
             player.DodgeUntil = now + PlayerRules.DodgeSeconds;
             player.NextDodgeAt = now + PlayerRules.DodgeCooldownSeconds;
@@ -711,6 +711,7 @@ public sealed partial class GameWorld
             CritPercent = player.Stats.CritPercent, ComboUnlocked = player.ComboUnlocked,
             AwakeningGauge = (byte)player.Awakening.Gauge,
             AwakeningUntil = double.IsInfinity(player.Awakening.ActiveUntil) ? 0 : player.Awakening.ActiveUntil,
+            PotionReadyAt = player.NextPotionAt, ManaPotionReadyAt = player.NextManaPotionAt,
         };
         for (var i = 0; i < player.ClassSkills.Count; i++) sheet.SkillUnlocked.Add(player.SkillUnlocked(i));
         sheet.Hotbar.AddRange(player.Hotbar);

@@ -317,18 +317,21 @@ public class CombatTests
         Assert.True(player.Hp.Current < player.Hp.Max);
     }
 
-    [Fact]
-    public void Esquiva_na_hora_certa_evita_o_golpe()
+    [Theory]
+    [InlineData(5, true)]
+    [InlineData(4, false)] // a esquiva só libera no nível 5
+    public void Esquiva_na_hora_certa_evita_o_golpe(int level, bool dodged)
     {
         var (world, outbox, player, monster) = Setup(Dummy(aggressive: true), monsterZ: 1.5f);
+        player.Progress = new Game.Shared.Progression.CharacterProgress(level, 0);
         world.Tick(0.05); // começa o preparo; o golpe sai em 0,55
 
         world.Handle(player.Id, new MoveInput { Sequence = 1, X = 0, Z = 0, Dodging = true }, now: 0.45);
         for (var t = 0.1; t <= 0.7; t += 0.05) world.Tick(t);
 
         var hit = Assert.Single(outbox.To<CombatEvent>(player.Id), e => e.AttackerId == monster.Id);
-        Assert.True(hit.Dodged);
-        Assert.Equal(player.Hp.Max, player.Hp.Current);
+        Assert.Equal(dodged, hit.Dodged);
+        Assert.Equal(dodged, player.Hp.Current == player.Hp.Max);
     }
 
     [Fact]

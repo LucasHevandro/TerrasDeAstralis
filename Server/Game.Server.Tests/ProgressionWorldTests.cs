@@ -516,6 +516,12 @@ public class ProgressionWorldTests
         Assert.Equal(0, player.Bag.Count("pocao_mp_p")); // a menor que cobre a falta
         Assert.Equal(1, player.Bag.Count("pocao_mp_m"));
         Assert.Contains(outbox.Notices(player.Id), n => n.StartsWith("Faltou MP"));
+
+        // O inventário aberto e a barra recebem a bolsa nova e a recarga da poção de mana.
+        world.Tick(3.05);
+        var bag = outbox.To<Inventory>(player.Id).Last();
+        Assert.DoesNotContain(bag.Items, i => i.ItemId == "pocao_mp_p");
+        Assert.Equal(3 + PlayerRules.PotionCooldownSeconds, outbox.To<CharacterSheet>(player.Id).Last().ManaPotionReadyAt, 3);
     }
 
     [Fact]
