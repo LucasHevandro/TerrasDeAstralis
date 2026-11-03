@@ -48,6 +48,8 @@ tem a estrutura e como rodar, e `Docs/` tem as decisões, o balanceamento, os vi
 - **Testes do exe** (DevTools): `-onlinetest pasta` com `-onlinefight`, `-onlineui`, `-onlinesanctuary`,
   `-onlinearena`, `-onlinesocial` e `-onlineswitch` (trocar de personagem); e também `-worldtest`, `-geartest`,
   `-logintest`, `-skilltest`, `-posetest` e `-bridgetest`.
+  - `-posetest` aceita `-posemodel class/guardian` (um modelo só, de perto), `-poseangle 110` (para que lado ele olha) e
+    `-poseweapon 0,0,270` (gira a arma da mão direita sem refazer o build; serve para achar o giro de uma arma nova).
   - Login salvo: `-remembertest pasta -savedlogin pasta\dados -server 127.0.0.1:7790`, rodado duas vezes (com
     `-rememberphase 1` e depois `2`). O `-savedlogin` não deixa o teste mexer no login de quem joga.
   - Cada um grava `relatorio.txt` (SUCESSO ou FALHA) e screenshots.

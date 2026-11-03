@@ -301,8 +301,13 @@ Cada decisão importante fica registrada aqui com data e motivo, para não ser r
 - **Modelo:** o `Barbarian_Large` do KayKit Adventurers EXTRA (comprado em 2026-10-30, CC0), com o machado e o escudo
   grandes do pacote, 2,3 m de altura. Ele usa outro esqueleto (Rig_Large), então tem um Animator próprio
   (`Guardiao.controller`) com as 6 animações do Rig_Large do `KayKit_Character_Animations_1.1`.
-- **Limites do Rig_Large:** não tem sentar, a maioria dos gestos nem as cabeças dos outros aventureiros. Na fogueira ele
-  fica de pé, e a criação de personagem esconde a escolha de penteado. O elmo dele é o chapéu de urso.
+- **Limites do Rig_Large:** não tem as cabeças dos outros aventureiros, então a criação de personagem esconde a escolha
+  de penteado. O elmo dele é o chapéu de urso. Sentar na fogueira e os gestos que faltam (falar, pegar, usar item,
+  arremessar e acenar) vêm do Rig_Medium, adaptados pelo `KayKitBuilder.RetargetToLarge` (2026-11-03): a cada quadro,
+  cada osso recebe a rotação de repouso dele mais a diferença que o clipe aplica no Rig_Medium, e o quadril segue a
+  proporção da altura. Os clipes ficam em `Gerado/Large_*.anim`.
+- **Machado:** a mão do Rig_Large tem outro eixo, e o machado grande ficava deitado ou de cabeça para baixo. O giro
+  certo é (0, 0, 270) (`KayKitBuilder.GuardianAxeEuler`), usado no prefab da classe e nos machados por grau.
 - **Testes:** o servidor aceita `--guest-class guardian`.
 - **Protocolo:** nenhuma mensagem mudou (a classe vai como número), então continua o 22.
 
