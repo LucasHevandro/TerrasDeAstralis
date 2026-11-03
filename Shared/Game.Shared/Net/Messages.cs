@@ -88,7 +88,7 @@ namespace Game.Shared.Net
     /// </summary>
     public static class Protocol
     {
-        public const int Version = 22;
+        public const int Version = 23;
         public const int DefaultPort = 7777;
     }
 

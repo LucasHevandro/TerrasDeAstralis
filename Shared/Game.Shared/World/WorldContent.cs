@@ -441,6 +441,14 @@ namespace Game.Shared.World
 
         public const float DodgeCooldownSeconds = 0.8f;
 
+        /// <summary>
+        /// A esquiva (Espaço) é uma skill a mais, liberada neste nível: no começo o jogador aprende a sair do golpe
+        /// andando, e a esquiva chega junto com os monstros que batem mais forte.
+        /// </summary>
+        public const int DodgeUnlockLevel = 5;
+
+        public static bool DodgeUnlocked(int level) => level >= DodgeUnlockLevel;
+
         /// <summary>Distância máxima para coletar um item com a tecla.</summary>
         public const float PickupRange = 3.5f;
 

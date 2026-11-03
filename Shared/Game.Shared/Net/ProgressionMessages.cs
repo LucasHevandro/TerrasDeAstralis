@@ -219,6 +219,11 @@ namespace Game.Shared.Net
         public byte AwakeningGauge;
         public double AwakeningUntil;
 
+        /// <summary>Hora do servidor em que a poção de HP e a de MP podem ser usadas de novo (a barra mostra a recarga).</summary>
+        public double PotionReadyAt;
+
+        public double ManaPotionReadyAt;
+
         public void Write(PacketWriter w)
         {
             w.WriteByte(Class);
@@ -237,6 +242,8 @@ namespace Game.Shared.Net
             foreach (var slot in Hotbar) w.WriteByte(slot);
             w.WriteByte(AwakeningGauge);
             w.WriteDouble(AwakeningUntil);
+            w.WriteDouble(PotionReadyAt);
+            w.WriteDouble(ManaPotionReadyAt);
         }
 
         public static CharacterSheet Read(PacketReader r)
@@ -253,6 +260,8 @@ namespace Game.Shared.Net
             for (var i = 0; i < slots; i++) sheet.Hotbar.Add(r.ReadByte());
             sheet.AwakeningGauge = r.ReadByte();
             sheet.AwakeningUntil = r.ReadDouble();
+            sheet.PotionReadyAt = r.ReadDouble();
+            sheet.ManaPotionReadyAt = r.ReadDouble();
             return sheet;
         }
     }
