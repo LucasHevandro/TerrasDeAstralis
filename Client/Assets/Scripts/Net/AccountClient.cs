@@ -56,11 +56,29 @@ namespace Game.Client.Net
             SendAsync<ApiError>(HttpMethod.Post, "/register", new Credentials { Account = account, Password = password, AcceptTerms = acceptTerms });
 
         /// <param name="acceptTerms">Só quando o servidor pediu o aceite de termos novos ("auth.terms_updated").</param>
-        public async Task<ApiResult<LoginResponse>> LoginAsync(string account, string password, string acceptTerms = "")
+        /// <param name="remember">"Manter conectado": a resposta traz também o token do computador.</param>
+        public async Task<ApiResult<LoginResponse>> LoginAsync(string account, string password, string acceptTerms = "", bool remember = false)
         {
             var result = await SendAsync<LoginResponse>(HttpMethod.Post, "/login",
-                new Credentials { Account = account, Password = password, AcceptTerms = acceptTerms });
+                new Credentials { Account = account, Password = password, AcceptTerms = acceptTerms, Remember = remember });
             if (result.Ok) Token = result.Value.Token;
+            return result;
+        }
+
+        /// <summary>Entra com o token do computador ("Manter conectado"); a resposta traz o token novo para guardar.</summary>
+        public async Task<ApiResult<LoginResponse>> DeviceLoginAsync(string deviceToken, string acceptTerms = "")
+        {
+            var result = await SendAsync<LoginResponse>(HttpMethod.Post, "/login/device",
+                new DeviceLogin { DeviceToken = deviceToken, AcceptTerms = acceptTerms });
+            if (result.Ok) Token = result.Value.Token;
+            return result;
+        }
+
+        /// <summary>"Sair da conta": o servidor esquece o token do computador e encerra a sessão.</summary>
+        public async Task<ApiResult<ApiError>> LogoutAsync(string deviceToken)
+        {
+            var result = await SendAsync<ApiError>(HttpMethod.Post, "/logout", new DeviceLogin { DeviceToken = deviceToken ?? "" });
+            Token = "";
             return result;
         }
 

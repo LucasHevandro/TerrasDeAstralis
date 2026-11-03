@@ -173,8 +173,25 @@ public interface IGameStore
     /// <summary>Conta dona do personagem com esse nome (sem acento/caixa), ou nula.</summary>
     Task<(int AccountId, string CharacterName)?> FindCharacterOwnerAsync(string characterName);
 
-    /// <summary>Bane a conta até <paramref name="until"/> (nulo tira o banimento).</summary>
+    /// <summary>
+    /// Bane a conta até <paramref name="until"/> (nulo tira o banimento). Banir apaga os tokens de "Manter conectado".
+    /// </summary>
     Task SetBanAsync(int accountId, DateTimeOffset? until, string reason);
+
+    /// <summary>
+    /// Guarda o hash de um token de "Manter conectado". Apaga os vencidos da conta e, se ela passar de
+    /// <paramref name="maxPerAccount"/>, os mais antigos.
+    /// </summary>
+    Task AddDeviceTokenAsync(int accountId, string tokenHash, DateTimeOffset createdAt, DateTimeOffset expiresAt, int maxPerAccount);
+
+    /// <summary>Conta dona do token (pelo hash), ou nula se não existe ou venceu.</summary>
+    Task<int?> FindDeviceTokenAsync(string tokenHash, DateTimeOffset now);
+
+    /// <summary>Apaga o token. Falso se ele já não existia (usado ao mesmo tempo por outro pedido).</summary>
+    Task<bool> RemoveDeviceTokenAsync(string tokenHash);
+
+    /// <summary>Apaga todos os tokens de "Manter conectado" da conta (senha trocada).</summary>
+    Task RemoveDeviceTokensAsync(int accountId);
 
     /// <summary>Silencia a conta até <paramref name="until"/> (nulo tira o silêncio).</summary>
     Task SetMuteAsync(int accountId, DateTimeOffset? until);

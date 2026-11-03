@@ -241,6 +241,38 @@ namespace Game.Server.Persistence.Migrations
                     b.ToTable("character_relations", (string)null);
                 });
 
+            modelBuilder.Entity("Game.Server.Persistence.DeviceTokenEntity", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<int>("AccountId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AccountId");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.ToTable("device_tokens", (string)null);
+                });
+
             modelBuilder.Entity("Game.Server.Persistence.DungeonRunEntity", b =>
                 {
                     b.Property<long>("Id")
@@ -588,6 +620,15 @@ namespace Game.Server.Persistence.Migrations
                     b.HasOne("Game.Server.Persistence.CharacterEntity", null)
                         .WithMany("Relations")
                         .HasForeignKey("CharacterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Game.Server.Persistence.DeviceTokenEntity", b =>
+                {
+                    b.HasOne("Game.Server.Persistence.AccountEntity", null)
+                        .WithMany()
+                        .HasForeignKey("AccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

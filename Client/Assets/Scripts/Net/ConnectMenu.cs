@@ -38,6 +38,11 @@ namespace Game.Client.Net
         private string _account = "";
         private string _password = "";
         private string _passwordAgain = "";
+
+        // "Lembrar conta" e "Manter conectado" (SavedLogin); o token do termo novo pedido na entrada com a conta salva.
+        private bool _rememberAccount = true;
+        private bool _staySignedIn;
+        private bool _termsForDevice;
         private string _newName = "";
         private CharacterClass _newClass = CharacterClass.Blade;
         private int _newHair;
@@ -157,12 +162,37 @@ namespace Game.Client.Net
             }
             _address = $"{GameMode.Host}:{GameMode.Port}";
             var chosen = "";
-            try { chosen = PlayerPrefs.GetString(ChosenServerKey, ""); } catch { }
+            if (!SavedLogin.IsTestFolder) try { chosen = PlayerPrefs.GetString(ChosenServerKey, ""); } catch { }
             _selected = Mathf.Max(0, ServerList.Entries.FindIndex(e => e.Address == chosen));
             _ = ServerList.LoadRemoteAsync();
+            _account = SavedLogin.Account;
+            _rememberAccount = SavedLogin.RememberAccount;
+            _staySignedIn = SavedLogin.StaySignedIn;
             if (!string.IsNullOrEmpty(GameMode.ResumeToken)) _ = ResumeAsync();
             else if (!string.IsNullOrEmpty(GameMode.AutoLoginAccount)) _ = AutoLoginAsync();
+            // "Manter conectado": entra sozinho no servidor escolhido, se houver token dele.
+            else if (Chosen != null && SavedLogin.Token(Chosen.ApiUrl).Length > 0) _ = DeviceLoginAsync();
         }
+
+        /// <summary>Tela atual (testes).</summary>
+        internal string ScreenName => _screen.ToString();
+
+        /// <summary>Preenche a tela de entrada como o jogador faria (testes do login salvo).</summary>
+        internal void FillLoginForTest(string account, string password, bool staySignedIn)
+        {
+            _account = account;
+            _password = password;
+            _staySignedIn = staySignedIn;
+            _rememberAccount = true;
+        }
+
+        /// <summary>O botão "Entrar" (testes).</summary>
+        internal Task SubmitLoginForTest() => LoginAsync();
+
+        /// <summary>Nome da conta no campo (testes: confere o "Lembrar conta").</summary>
+        internal string AccountForTest => _account;
+
+        internal void LogoutForTest() => Logout();
 
         /// <summary>
         /// Voltou do jogo para trocar de personagem: abre a lista da conta com o mesmo login. Se o login venceu (ou o
@@ -175,6 +205,53 @@ namespace Game.Client.Net
             _api.UseToken(GameMode.ResumeToken);
             GameMode.ClearResume();
             await Run(Loc.T("login.loading_characters"), LoadCharactersAsync);
+            // A sessão caiu (o servidor reiniciou), mas este computador está conectado: entra de novo sozinho.
+            if (_screen == Screen.Login && SavedLogin.Token(_apiFor).Length > 0) await DeviceLoginAsync();
+        }
+
+        /// <summary>
+        /// Entra com o token salvo deste computador. Se o servidor recusar (venceu, senha trocada, conta banida), o
+        /// token é esquecido e fica a tela de entrada com a conta preenchida; sem resposta do servidor, ele continua
+        /// guardado para a próxima vez.
+        /// </summary>
+        private async Task DeviceLoginAsync(string acceptTerms = "")
+        {
+            if (!PrepareApi()) return;
+            var server = _apiFor;
+            var saved = SavedLogin.Token(server);
+            if (saved.Length == 0) return;
+            await Run(Loc.T("login.entering_saved"), async () =>
+            {
+                var login = await _api.DeviceLoginAsync(saved, acceptTerms);
+                if (!login.Ok && login.ErrorKey == "auth.terms_updated")
+                {
+                    ShowError(login.Error);
+                    _termsForDevice = true;
+                    OpenTerms(Legal.TermsName, Screen.Login, update: true);
+                    return;
+                }
+                if (!login.Ok)
+                {
+                    if (login.ErrorKey == "auth.device_expired" || login.ErrorKey.StartsWith("auth.banned", System.StringComparison.Ordinal)) SavedLogin.ForgetToken(server);
+                    ShowError(login.Error);
+                    _screen = Screen.Login;
+                    return;
+                }
+                SavedLogin.SaveToken(server, login.Value.DeviceToken);
+                _message = "";
+                await LoadCharactersAsync();
+            });
+        }
+
+        /// <summary>"Sair da conta": o servidor e este computador esquecem o token; volta à tela de entrada.</summary>
+        private void Logout()
+        {
+            var server = _apiFor;
+            if (_api != null) _ = _api.LogoutAsync(SavedLogin.Token(server));
+            SavedLogin.ForgetToken(server);
+            _screen = Screen.Login;
+            _api = null;
+            _message = "";
         }
 
         // ===== Ações =====
@@ -184,7 +261,8 @@ namespace Game.Client.Net
             if (!PrepareApi()) return;
             await Run(Loc.T("login.entering"), async () =>
             {
-                var login = await _api.LoginAsync(_account, _password, acceptTerms);
+                var stay = _staySignedIn && SavedLogin.CanKeepToken;
+                var login = await _api.LoginAsync(_account, _password, acceptTerms, stay);
                 if (!login.Ok && login.ErrorKey == "auth.terms_updated")
                 {
                     // Termos novos: mostra o texto com o botão de aceitar (que tenta o login de novo).
@@ -199,6 +277,9 @@ namespace Game.Client.Net
                     return;
                 }
                 _password = "";
+                SavedLogin.SaveChoices(_account, _rememberAccount, stay);
+                if (stay) SavedLogin.SaveToken(_apiFor, login.Value.DeviceToken);
+                else SavedLogin.ForgetToken(_apiFor);
                 await LoadCharactersAsync();
             });
         }
@@ -331,8 +412,11 @@ namespace Game.Client.Net
             _apiFor = entry.ApiUrl;
             try
             {
-                PlayerPrefs.SetString(ChosenServerKey, entry.Address);
-                PlayerPrefs.Save();
+                if (!SavedLogin.IsTestFolder)
+                {
+                    PlayerPrefs.SetString(ChosenServerKey, entry.Address);
+                    PlayerPrefs.Save();
+                }
             }
             catch { }
             return true;
@@ -400,7 +484,7 @@ namespace Game.Client.Net
             // Os termos precisam de mais espaço para ler.
             var wide = _screen == Screen.CreateCharacter || (_screen == Screen.Characters && _characters.Count > 0);
             var width = (_screen == Screen.Terms || wide ? 820 : 480) * scale;
-            var height = (_screen == Screen.Terms ? 780 : _screen == Screen.CreateCharacter ? 700 : wide ? 600 : 520) * scale;
+            var height = (_screen == Screen.Terms ? 780 : _screen == Screen.CreateCharacter ? 700 : wide ? 600 : _screen == Screen.Login ? 580 : 520) * scale;
             var area = new Rect((UnityEngine.Screen.width - width) / 2, (UnityEngine.Screen.height - height) / 2, width, height);
             Game.Client.UI.UiTheme.Panel(area, 0.94f);
             GUILayout.BeginArea(new Rect(area.x + 14 * scale, area.y + 6 * scale, area.width - 28 * scale, area.height - 12 * scale));
@@ -496,7 +580,28 @@ namespace Game.Client.Net
             _account = GUILayout.TextField(_account, AccountRules.MaxAccountLength, GUILayout.Height(26 * scale));
             GUILayout.Label(Loc.T("login.password"), _label);
             _password = GUILayout.PasswordField(_password, '•', AccountRules.MaxPasswordLength, GUILayout.Height(26 * scale));
-            GUILayout.Space(10 * scale);
+            GUILayout.Space(4 * scale);
+            GUILayout.BeginHorizontal();
+            var remember = GUILayout.Toggle(_rememberAccount, " " + Loc.T("login.remember_account"), GUILayout.Height(24 * scale));
+            if (remember != _rememberAccount)
+            {
+                _rememberAccount = remember;
+                if (!remember) _staySignedIn = false;
+            }
+            if (SavedLogin.CanKeepToken)
+            {
+                GUILayout.Space(16 * scale);
+                var stay = GUILayout.Toggle(_staySignedIn, " " + Loc.T("login.stay_signed_in"), GUILayout.Height(24 * scale));
+                if (stay != _staySignedIn)
+                {
+                    _staySignedIn = stay;
+                    if (stay) _rememberAccount = true;
+                }
+            }
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+            if (_staySignedIn) GUILayout.Label(Loc.T("login.stay_signed_in_hint"), _small);
+            GUILayout.Space(6 * scale);
             if (GUILayout.Button(Loc.T("login.enter"), GUILayout.Height(38 * scale))) _ = LoginAsync();
             GUILayout.BeginHorizontal();
             if (GUILayout.Button(Loc.T("login.create_account"), GUILayout.Height(30 * scale)))
@@ -552,11 +657,13 @@ namespace Game.Client.Net
             {
                 _termsUpdate = false;
                 _message = "";
-                _ = LoginAsync(Legal.Version);
+                _ = _termsForDevice ? DeviceLoginAsync(Legal.Version) : LoginAsync(Legal.Version);
+                _termsForDevice = false;
             }
             if (GUILayout.Button(_termsUpdate ? Loc.T("ui.back") : Loc.T("login.close"), GUILayout.Height(28 * scale)))
             {
                 _termsUpdate = false;
+                _termsForDevice = false;
                 _screen = _termsReturn;
             }
         }
@@ -605,12 +712,7 @@ namespace Game.Client.Net
                 _screen = Screen.CreateCharacter;
                 _message = "";
             }
-            if (GUILayout.Button(Loc.T("login.logout"), GUILayout.Height(28 * scale)))
-            {
-                _screen = Screen.Login;
-                _api = null;
-                _message = "";
-            }
+            if (GUILayout.Button(Loc.T("login.logout"), GUILayout.Height(28 * scale))) Logout();
         }
 
         private void DrawCreate(float scale)

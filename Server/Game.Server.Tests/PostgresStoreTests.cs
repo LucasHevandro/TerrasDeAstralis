@@ -143,6 +143,38 @@ public class PostgresStoreTests
     }
 
     [Fact]
+    public async Task Manter_conectado_no_banco_real()
+    {
+        var store = await FreshStoreAsync();
+        if (store == null) return;
+        var auth = new AuthService(store, new PasswordHasher(1000), new SessionTokens());
+        await auth.RegisterAsync(new Credentials { Account = "lucas", Password = "senha123" });
+        var account = (await store.FindAccountAsync("lucas"))!;
+
+        var tokens = new List<string>();
+        for (var i = 0; i < DeviceTokens.MaxPerAccount + 1; i++)
+            tokens.Add((await auth.LoginAsync(new Credentials { Account = "lucas", Password = "senha123", Remember = true })).Value!.DeviceToken);
+        Assert.Null(await store.FindDeviceTokenAsync(DeviceTokens.Hash(tokens[0]), DateTimeOffset.UtcNow));
+        Assert.Equal(account.Id, await store.FindDeviceTokenAsync(DeviceTokens.Hash(tokens[^1]), DateTimeOffset.UtcNow));
+        Assert.Null(await store.FindDeviceTokenAsync(DeviceTokens.Hash(tokens[^1]), DateTimeOffset.UtcNow.AddDays(31)));
+
+        var entered = await auth.LoginWithDeviceAsync(new DeviceLogin { DeviceToken = tokens[^1] });
+        Assert.True(entered.Ok);
+        Assert.False((await auth.LoginWithDeviceAsync(new DeviceLogin { DeviceToken = tokens[^1] })).Ok);
+
+        Assert.Null(await auth.ResetPasswordAsync("lucas", "senhanova1"));
+        Assert.False((await auth.LoginWithDeviceAsync(new DeviceLogin { DeviceToken = entered.Value!.DeviceToken })).Ok);
+
+        var again = (await auth.LoginAsync(new Credentials { Account = "lucas", Password = "senhanova1", Remember = true })).Value!.DeviceToken;
+        await store.SetBanAsync(account.Id, DateTimeOffset.UtcNow.AddDays(1), "teste");
+        Assert.Null(await store.FindDeviceTokenAsync(DeviceTokens.Hash(again), DateTimeOffset.UtcNow));
+
+        await store.AddDeviceTokenAsync(account.Id, DeviceTokens.Hash("x"), DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddDays(30), 5);
+        Assert.True(await store.DeleteAccountAsync("lucas"));
+        Assert.False(await store.RemoveDeviceTokenAsync(DeviceTokens.Hash("x")));
+    }
+
+    [Fact]
     public async Task Fluxo_completo_de_conta_no_banco_real()
     {
         var store = await FreshStoreAsync();

@@ -247,6 +247,10 @@ public class SaveAndLogTests
         public Task<AccountRecord?> FindAccountByIdAsync(int id) => _inner.FindAccountByIdAsync(id);
         public Task<(int AccountId, string CharacterName)?> FindCharacterOwnerAsync(string n) => _inner.FindCharacterOwnerAsync(n);
         public Task SetBanAsync(int id, DateTimeOffset? until, string reason) => _inner.SetBanAsync(id, until, reason);
+        public Task AddDeviceTokenAsync(int id, string h, DateTimeOffset c, DateTimeOffset e, int max) => _inner.AddDeviceTokenAsync(id, h, c, e, max);
+        public Task<int?> FindDeviceTokenAsync(string h, DateTimeOffset now) => _inner.FindDeviceTokenAsync(h, now);
+        public Task<bool> RemoveDeviceTokenAsync(string h) => _inner.RemoveDeviceTokenAsync(h);
+        public Task RemoveDeviceTokensAsync(int id) => _inner.RemoveDeviceTokensAsync(id);
         public Task SetMuteAsync(int id, DateTimeOffset? until) => _inner.SetMuteAsync(id, until);
         public Task<bool> SetGmAsync(string a, bool gm) => _inner.SetGmAsync(a, gm);
         public Task<bool> SetPasswordHashAsync(string a, string hash) => _inner.SetPasswordHashAsync(a, hash);

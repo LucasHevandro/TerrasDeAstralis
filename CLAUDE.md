@@ -24,7 +24,7 @@ tem a estrutura e como rodar, e `Docs/` tem as decisões, o balanceamento, os vi
   roda a `main`.
 - **Pastas:** `Shared/Game.Shared` (netstandard2.1, também usada pelo Unity como pacote local), `Server/Game.Server`,
   `Client/` (Unity), `Tools/` (Bots, Balance, Launcher, instalador, publicar) e `deploy/` (VPS).
-- **Testes:** `dotnet test Game.slnx -c Release` (hoje são 252 no Shared e 208 no Servidor). Os testes de textos
+- **Testes:** `dotnet test Game.slnx -c Release` (hoje são 256 no Shared e 223 no Servidor). Os testes de textos
   exigem chaves literais no código: nada de `"login.head_" + i`, use um array de chaves literais.
 - **Protocolo:** `Shared/Game.Shared/Net/Messages.cs`, `Protocol.Version = 22`. Se mudar alguma mensagem, suba a
   versão e atualize o cliente e o servidor juntos. O `FuzzTests` conta os tipos de mensagem.
@@ -48,6 +48,8 @@ tem a estrutura e como rodar, e `Docs/` tem as decisões, o balanceamento, os vi
 - **Testes do exe** (DevTools): `-onlinetest pasta` com `-onlinefight`, `-onlineui`, `-onlinesanctuary`,
   `-onlinearena`, `-onlinesocial` e `-onlineswitch` (trocar de personagem); e também `-worldtest`, `-geartest`,
   `-logintest`, `-skilltest`, `-posetest` e `-bridgetest`.
+  - Login salvo: `-remembertest pasta -savedlogin pasta\dados -server 127.0.0.1:7790`, rodado duas vezes (com
+    `-rememberphase 1` e depois `2`). O `-savedlogin` não deixa o teste mexer no login de quem joga.
   - Cada um grava `relatorio.txt` (SUCESSO ou FALHA) e screenshots.
   - Para os online: servidor local com `dotnet artifacts/bin/Game.Server/release/Game.Server.dll --db memory --guests --port 7790`
     e o exe com `-connect 127.0.0.1:7790 -name Teste`.
