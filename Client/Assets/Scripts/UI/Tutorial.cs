@@ -155,13 +155,16 @@ namespace Game.Client.UI
 
         private void Go(PlayerCombat player, Step step, bool save = true)
         {
+            // A esquiva só libera no nível 5: antes disso o passo dela fica para depois (não trava o tutorial).
+            var motor = player.GetComponent<PlayerMotor>();
+            if (step == Step.Dodge && motor != null && !motor.DodgeUnlocked) step = Step.UnlockCombo;
             if (step == Step.UnlockCombo && ComboUnlocked) step = Step.StartCombo;
             _step = step;
             _stepStartedAt = Time.unscaledTime;
             _startPosition = player.transform.position;
             _hitsAtStep = player.HitsLanded;
             _finishersAtStep = player.FinishersLanded;
-            _dodgesAtStep = player.GetComponent<PlayerMotor>()?.DodgeCount ?? 0;
+            _dodgesAtStep = motor != null ? motor.DodgeCount : 0;
             _missAt = float.NegativeInfinity;
             _lastGradeSeen = player.LastGradeAt;
             if (!save) return;

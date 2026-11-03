@@ -202,6 +202,13 @@ namespace Game.Client.UI
                         };
                         return shapes.ToArray();
                     }
+                // ----- Esquiva (todas as classes): uma rolagem com o rastro do movimento -----
+                case "esquiva":
+                    return new Shape[]
+                    {
+                        new Ring(0.15f, 0.05f, 0.38f, 0.08f, 40f, 320f), new Segment(-0.75f, -0.45f, -0.25f, -0.45f, 0.05f),
+                        new Segment(-0.8f, -0.15f, -0.35f, -0.15f, 0.05f), new Segment(0.5f, 0.35f, 0.62f, 0.62f, 0.06f),
+                    };
                 // ----- Guardião: machado e escudo -----
                 case "golpe_de_machado": return Axe(-0.5f, -0.6f, 0.35f, 0.45f);
                 case "grito_de_guerra":

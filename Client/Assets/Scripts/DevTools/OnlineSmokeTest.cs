@@ -1277,12 +1277,30 @@ namespace Game.Client.DevTools
         private static IEnumerator WalkToPoint(PlayerMotor motor, Vector3 target)
         {
             var giveUp = Time.realtimeSinceStartup + 25f;
+            // Preso num obstáculo (os troncos da fogueira e os moradores têm colisão): anda de lado um pouco e tenta de novo,
+            // trocando o lado a cada vez.
+            var checkAt = Time.realtimeSinceStartup + 0.5f;
+            var lastCheck = motor.transform.position;
+            var sidestepUntil = 0f;
+            var side = 1f;
             while (Time.realtimeSinceStartup < giveUp)
             {
                 var position = motor.transform.position;
                 var flat = new Vector3(target.x - position.x, 0, target.z - position.z);
                 if (flat.magnitude < 0.2f) break;
-                motor.Teleport(position + Vector3.ClampMagnitude(flat, 6f * Time.deltaTime));
+                var step = flat;
+                if (Time.realtimeSinceStartup < sidestepUntil) step = Vector3.Cross(Vector3.up, flat.normalized) * side;
+                else if (Time.realtimeSinceStartup >= checkAt)
+                {
+                    if ((position - lastCheck).magnitude < 0.3f)
+                    {
+                        sidestepUntil = Time.realtimeSinceStartup + 0.4f;
+                        side = -side;
+                    }
+                    lastCheck = position;
+                    checkAt = Time.realtimeSinceStartup + 0.5f;
+                }
+                motor.Teleport(position + Vector3.ClampMagnitude(step.normalized * flat.magnitude, 6f * Time.deltaTime));
                 yield return null;
             }
         }

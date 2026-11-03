@@ -473,18 +473,64 @@ namespace Game.Client.UI
                     }
 
                     var remaining = combat.CooldownRemaining(i);
-                    if (remaining > 0)
-                    {
-                        var fraction = Mathf.Clamp01(remaining / Mathf.Max(0.01f, skill.CooldownSeconds));
-                        Box(new Rect(rect.x + 2, rect.y + 2 + (rect.height - 4) * (1 - fraction), rect.width - 4, (rect.height - 4) * fraction), new Color(0, 0, 0, 0.65f));
-                        ShadowLabel(rect, remaining >= 10f ? $"<b>{remaining:0}</b>" : $"<b>{remaining:0.0}</b>", _small.WithCenter(), Color.white, 1f);
-                    }
+                    if (remaining > 0) CooldownShade(rect, remaining, skill.CooldownSeconds);
                 }
                 ShadowLabel(new Rect(rect.x + 3, rect.y + 1, rect.width, 16), SlotKeyLabel(slot), _key, filled ? Color.white : new Color(1f, 1f, 1f, 0.45f), 1f);
             }
 
+            DrawDodgeSlot(first, mouse);
             DrawCastBar();
             if (hovered >= 0) DrawSkillTooltip(skills[hovered], hovered, mouse);
+        }
+
+        /// <summary>A esquiva como skill (só para o ícone; quem esquiva é o PlayerMotor, com o Espaço).</summary>
+        private static readonly SkillData DodgeSkill =
+            new SkillData("esquiva", SkillKind.Physical, 1, 1f, Game.Shared.World.PlayerRules.DodgeCooldownSeconds);
+
+        private PlayerMotor _motor;
+
+        /// <summary>
+        /// Casa da esquiva à esquerda da barra: o ícone, a tecla, a recarga e, antes do nível 5, o cadeado com o nível.
+        /// </summary>
+        private void DrawDodgeSlot(Rect firstSlot, Vector2 mouse)
+        {
+            if (_motor == null) _motor = combat.GetComponent<PlayerMotor>();
+            if (_motor == null) return;
+            var rect = new Rect(firstSlot.x - 16 - SlotGap - SlotSize, BarBottom - SlotSize, SlotSize, SlotSize);
+            var frame = new Rect(rect.x - 8, rect.y - 8, rect.width + 16, rect.height + 16);
+            UiTheme.Panel(frame, 0.85f);
+            PanelRects.Add(frame);
+            UiTheme.Slot(rect, rect.Contains(mouse));
+            var icon = SkillIcons.Get(DodgeSkill);
+            if (icon != null) GUI.DrawTexture(new Rect(rect.x + 2, rect.y + 2, rect.width - 4, rect.height - 4), icon);
+            var key = KeyBindings.Label(GameAction.Dodge);
+            if (!_motor.DodgeUnlocked)
+            {
+                Box(rect, new Color(0.03f, 0.03f, 0.05f, 0.8f));
+                ShadowLabel(rect, $"<b>Nv {Game.Shared.World.PlayerRules.DodgeUnlockLevel}</b>", _small.WithCenter(), new Color(1f, 0.8f, 0.5f), 1f);
+            }
+            else
+            {
+                var remaining = _motor.DodgeCooldownRemaining;
+                if (remaining > 0) CooldownShade(rect, remaining, _motor.DodgeCooldown);
+            }
+            ShadowLabel(new Rect(rect.x + 3, rect.y + 1, rect.width, 16), key, _key, Color.white, 1f);
+            if (!rect.Contains(mouse)) return;
+            var text = $"<b>{Loc.T("hud.dodge")}</b>\n<size=14>{Game.Shared.World.PlayerRules.DodgeCooldownSeconds:0.#} s</size>\n" +
+                $"<size=13>{Loc.T("hud.dodge_info", key)}</size>";
+            if (!_motor.DodgeUnlocked)
+                text += $"\n<size=14><color=#ff8a7a>{Loc.T("hud.dodge_locked", Game.Shared.World.PlayerRules.DodgeUnlockLevel)}</color></size>";
+            var tip = new Rect(Mathf.Clamp(mouse.x - 160, 10, VirtualWidth - 330), BarTop - 112, 320, 94);
+            UiTheme.Panel(tip, 0.95f);
+            GUI.Label(new Rect(tip.x + 10, tip.y + 6, tip.width - 20, tip.height - 12), text, _small);
+        }
+
+        /// <summary>Sombra de recarga que desce de cima para baixo, com os segundos que faltam.</summary>
+        private void CooldownShade(Rect rect, float remaining, float total)
+        {
+            var fraction = Mathf.Clamp01(remaining / Mathf.Max(0.01f, total));
+            Box(new Rect(rect.x + 2, rect.y + 2 + (rect.height - 4) * (1 - fraction), rect.width - 4, (rect.height - 4) * fraction), new Color(0, 0, 0, 0.65f));
+            ShadowLabel(rect, remaining >= 10f ? $"<b>{remaining:0}</b>" : $"<b>{remaining:0.0}</b>", _small.WithCenter(), Color.white, 1f);
         }
 
         /// <summary>Poção na barra: o ícone e quantas há na bolsa (escurece quando acabou).</summary>
@@ -495,6 +541,18 @@ namespace Game.Client.UI
             if (icon != null) GUI.DrawTexture(new Rect(rect.x + 4, rect.y + 4, rect.width - 8, rect.height - 8), icon, ScaleMode.ScaleToFit);
             else ShadowLabel(rect, Game.Shared.Items.ItemCatalog.Get(itemId).Name, _key.WithCenter(), Color.white, 1f);
             if (count == 0) Box(rect, new Color(0.03f, 0.03f, 0.05f, 0.7f));
+            else
+            {
+                // Recarga da poção (a de HP e a de MP têm a sua), pela hora que o servidor mandou na ficha.
+                var sheet = CharacterState.Sheet;
+                var session = NetworkSession.Instance;
+                if (sheet != null && session != null)
+                {
+                    var mana = Game.Shared.Items.ItemCatalog.Get(itemId).HealMp > 0;
+                    var remaining = (float)((mana ? sheet.ManaPotionReadyAt : sheet.PotionReadyAt) - session.ServerNow);
+                    if (remaining > 0) CooldownShade(rect, remaining, (float)Game.Shared.World.PlayerRules.PotionCooldownSeconds);
+                }
+            }
             ShadowLabel(new Rect(rect.x, rect.yMax - 18, rect.width - 4, 16), $"<b>{count}</b>", _key.WithAlignment(TextAnchor.UpperRight),
                 count == 0 ? new Color(1f, 0.45f, 0.4f) : Color.white, 1f);
         }

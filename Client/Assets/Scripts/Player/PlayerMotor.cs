@@ -103,9 +103,21 @@ namespace Game.Client.Player
             _correctionTime = SmoothCorrectionSeconds;
         }
 
+        private Combat.PlayerCombat _combat;
+        private float _lockedNoticeAt;
+
+        /// <summary>A esquiva libera no nível 5 (<see cref="Game.Shared.World.PlayerRules.DodgeUnlockLevel"/>).</summary>
+        public bool DodgeUnlocked => _combat == null || Game.Shared.World.PlayerRules.DodgeUnlocked(_combat.Level);
+
+        /// <summary>Segundos até poder esquivar de novo (o HUD mostra na casa da esquiva).</summary>
+        public float DodgeCooldownRemaining => Mathf.Max(0f, _nextDodgeAt - Time.time);
+
+        public float DodgeCooldown => dodgeCooldown;
+
         private void Awake()
         {
             _controller = GetComponent<CharacterController>();
+            _combat = GetComponent<Combat.PlayerCombat>();
             if (cameraTransform == null && Camera.main != null) cameraTransform = Camera.main.transform;
         }
 
@@ -116,7 +128,15 @@ namespace Game.Client.Player
             var input = keyboard != null ? ReadMoveInput(keyboard) : Vector2.zero;
             var moveDirection = ToWorldDirection(input);
 
-            if (UI.KeyBindings.Pressed(UI.GameAction.Dodge) && Time.time >= _nextDodgeAt && !Dead)
+            var dodgePressed = UI.KeyBindings.Pressed(UI.GameAction.Dodge) && !Dead;
+            if (dodgePressed && !DodgeUnlocked)
+            {
+                // Antes do nível 5 a esquiva ainda não existe (o servidor também recusa): só avisa, sem repetir a cada aperto.
+                if (Time.time >= _lockedNoticeAt && _combat != null)
+                    _combat.ShowNotice(Game.Shared.Text.Loc.T("hud.dodge_locked", Game.Shared.World.PlayerRules.DodgeUnlockLevel));
+                _lockedNoticeAt = Time.time + 2f;
+            }
+            else if (dodgePressed && Time.time >= _nextDodgeAt)
             {
                 // Esquiva na direção do movimento; parado, esquiva para trás. O corpo vira para onde vai: a animação é
                 // de rolar para a frente, e de lado ou de costas o personagem deslizava.
