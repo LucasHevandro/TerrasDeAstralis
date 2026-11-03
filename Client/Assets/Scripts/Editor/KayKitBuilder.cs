@@ -32,6 +32,9 @@ namespace Game.Client.Editor
             public string Model = "";
             public string RightHand = "";
             public string LeftHand = "";
+
+            /// <summary>Giro da arma na mão direita (o machado grande ficava de cabeça para baixo no Rig_Large).</summary>
+            public Vector3 RightHandEuler;
             public string[] Hide = System.Array.Empty<string>();
             public float Height = CharacterHeight;
 
@@ -42,6 +45,9 @@ namespace Game.Client.Editor
             /// <summary>Classes: leva as cabeças dos outros aventureiros escondidas (os penteados da criação).</summary>
             public bool Heads;
         }
+
+        /// <summary>Giro do machado na mão do Guardião (o mesmo nos machados por grau, no ItemModelBuilder).</summary>
+        internal static readonly Vector3 GuardianAxeEuler = new Vector3(0f, 0f, 270f);
 
         /// <summary>Aventureiros do pacote com o mesmo esqueleto: a cabeça de um serve no corpo do outro.</summary>
         private static readonly string[] HeadModels = { "Knight", "Mage", "Ranger", "Rogue", "Barbarian" };
@@ -56,6 +62,7 @@ namespace Game.Client.Editor
             ["guardian"] = new Look
             {
                 Model = "Barbarian_Large", RightHand = "axe_1handed_Large", LeftHand = "shield_round_barbarian_Large", Height = 2.3f,
+                RightHandEuler = GuardianAxeEuler,
             },
         };
 
@@ -402,52 +409,8 @@ namespace Game.Client.Editor
             Quick(toDodge, 0.04f);
             Leave(dodge, locomotion, 0.9f);
 
-            // Sentar na fogueira com a sequência completa: sentar, descansar sentado e levantar.
-            controller.AddParameter("Resting", AnimatorControllerParameterType.Bool);
-            var sitDown = machine.AddState("Sentando");
-            sitDown.motion = Clip("Simulation", "Sit_Floor_Down");
-            var rest = machine.AddState("Sentado");
-            rest.motion = Clip("Simulation", "Sit_Floor_Idle");
-            var standUp = machine.AddState("Levantando");
-            standUp.motion = Clip("Simulation", "Sit_Floor_StandUp");
-
-            var toSit = locomotion.AddTransition(sitDown);
-            toSit.AddCondition(AnimatorConditionMode.If, 0, "Resting");
-            toSit.AddCondition(AnimatorConditionMode.IfNot, 0, "Dead");
-            Quick(toSit, 0.15f);
-
-            var finishSit = sitDown.AddTransition(rest);
-            finishSit.AddCondition(AnimatorConditionMode.If, 0, "Resting");
-            finishSit.hasExitTime = true;
-            finishSit.exitTime = 0.9f;
-            finishSit.duration = 0.12f;
-            finishSit.hasFixedDuration = true;
-
-            // Se o jogador andar ou cancelar enquanto senta, completa o movimento levantando.
-            var cancelSit = sitDown.AddTransition(standUp);
-            cancelSit.AddCondition(AnimatorConditionMode.IfNot, 0, "Resting");
-            cancelSit.hasExitTime = true;
-            cancelSit.exitTime = 0.9f;
-            cancelSit.duration = 0.08f;
-            cancelSit.hasFixedDuration = true;
-
-            var leaveSeat = rest.AddTransition(standUp);
-            leaveSeat.AddCondition(AnimatorConditionMode.IfNot, 0, "Resting");
-            Quick(leaveSeat, 0.12f);
-
-            var finishStand = standUp.AddTransition(locomotion);
-            finishStand.AddCondition(AnimatorConditionMode.IfNot, 0, "Resting");
-            finishStand.hasExitTime = true;
-            finishStand.exitTime = 0.9f;
-            finishStand.duration = 0.12f;
-            finishStand.hasFixedDuration = true;
-
-            var sitAgain = standUp.AddTransition(sitDown);
-            sitAgain.AddCondition(AnimatorConditionMode.If, 0, "Resting");
-            sitAgain.hasExitTime = true;
-            sitAgain.exitTime = 0.9f;
-            sitAgain.duration = 0.12f;
-            sitAgain.hasFixedDuration = true;
+            AddSitting(controller, machine, locomotion, Clip("Simulation", "Sit_Floor_Down"), Clip("Simulation", "Sit_Floor_Idle"),
+                Clip("Simulation", "Sit_Floor_StandUp"));
 
             AnimatorState resurrection = null;
             if (name == "Esqueleto")
@@ -463,6 +426,88 @@ namespace Game.Client.Editor
             return controller;
         }
 
+        /// <summary>
+        /// Clipe do Rig_Medium refeito para o Rig_Large (os ossos têm os mesmos nomes; só a raiz e as proporções mudam).
+        /// A cada quadro, cada osso recebe a rotação de repouso dele mais a diferença que o clipe aplica no osso do
+        /// Rig_Medium; o quadril sobe e desce na proporção da altura do quadril de cada um. Fica em Gerado/Large_*.anim.
+        /// </summary>
+        private static AnimationClip RetargetToLarge(string file, string name, bool loop = false)
+        {
+            const float rate = 30f;
+            var source = Clip(file, name);
+            var medium = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>($"{Characters}/Knight.fbx"));
+            var large = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>($"{Characters}/Barbarian_Large.fbx"));
+            try
+            {
+                var mediumBones = medium.GetComponentsInChildren<Transform>(true).GroupBy(t => t.name).ToDictionary(g => g.Key, g => g.First());
+                var largeBones = large.GetComponentsInChildren<Transform>(true).GroupBy(t => t.name).ToDictionary(g => g.Key, g => g.First());
+                var restMedium = mediumBones.ToDictionary(p => p.Key, p => (p.Value.localRotation, p.Value.localPosition));
+                var restLarge = largeBones.ToDictionary(p => p.Key, p => (p.Value.localRotation, p.Value.localPosition));
+                var bones = SkeletonBones.Where(b => mediumBones.ContainsKey(b) && largeBones.ContainsKey(b)).ToArray();
+                var hipsRatio = Mathf.Abs(restMedium["hips"].localPosition.y) > 1e-4f
+                    ? restLarge["hips"].localPosition.y / restMedium["hips"].localPosition.y : 1f;
+
+                var frames = Mathf.Max(2, Mathf.CeilToInt(source.length * rate) + 1);
+                var rotation = bones.ToDictionary(b => b, _ => new[] { new AnimationCurve(), new AnimationCurve(), new AnimationCurve(), new AnimationCurve() });
+                var hips = new[] { new AnimationCurve(), new AnimationCurve(), new AnimationCurve() };
+                for (var f = 0; f < frames; f++)
+                {
+                    var time = Mathf.Min(source.length, f / rate);
+                    source.SampleAnimation(medium, time);
+                    foreach (var bone in bones)
+                    {
+                        var delta = Quaternion.Inverse(restMedium[bone].localRotation) * mediumBones[bone].localRotation;
+                        var q = restLarge[bone].localRotation * delta;
+                        var curves = rotation[bone];
+                        curves[0].AddKey(time, q.x);
+                        curves[1].AddKey(time, q.y);
+                        curves[2].AddKey(time, q.z);
+                        curves[3].AddKey(time, q.w);
+                    }
+                    var offset = (mediumBones["hips"].localPosition - restMedium["hips"].localPosition) * hipsRatio;
+                    var position = restLarge["hips"].localPosition + offset;
+                    hips[0].AddKey(time, position.x);
+                    hips[1].AddKey(time, position.y);
+                    hips[2].AddKey(time, position.z);
+                }
+
+                var clip = new AnimationClip { name = "Large_" + name, frameRate = rate };
+                foreach (var bone in bones)
+                {
+                    var path = AnimationUtility.CalculateTransformPath(largeBones[bone], large.transform);
+                    var names = new[] { "m_LocalRotation.x", "m_LocalRotation.y", "m_LocalRotation.z", "m_LocalRotation.w" };
+                    for (var c = 0; c < 4; c++)
+                        AnimationUtility.SetEditorCurve(clip, EditorCurveBinding.FloatCurve(path, typeof(Transform), names[c]), rotation[bone][c]);
+                }
+                var hipsPath = AnimationUtility.CalculateTransformPath(largeBones["hips"], large.transform);
+                var axes = new[] { "m_LocalPosition.x", "m_LocalPosition.y", "m_LocalPosition.z" };
+                for (var c = 0; c < 3; c++)
+                    AnimationUtility.SetEditorCurve(clip, EditorCurveBinding.FloatCurve(hipsPath, typeof(Transform), axes[c]), hips[c]);
+                clip.EnsureQuaternionContinuity();
+                var settings = AnimationUtility.GetAnimationClipSettings(clip);
+                settings.loopTime = loop;
+                AnimationUtility.SetAnimationClipSettings(clip, settings);
+
+                var asset = $"{Generated}/Large_{name}.anim";
+                AssetDatabase.DeleteAsset(asset);
+                AssetDatabase.CreateAsset(clip, asset);
+                return clip;
+            }
+            finally
+            {
+                Object.DestroyImmediate(medium);
+                Object.DestroyImmediate(large);
+            }
+        }
+
+        /// <summary>Ossos que os dois esqueletos (Rig_Medium e Rig_Large) têm com o mesmo nome.</summary>
+        private static readonly string[] SkeletonBones =
+        {
+            "root", "hips", "spine", "chest", "head", "upperarm.l", "lowerarm.l", "wrist.l", "hand.l", "upperarm.r",
+            "lowerarm.r", "wrist.r", "hand.r", "upperleg.l", "lowerleg.l", "foot.l", "toes.l", "upperleg.r", "lowerleg.r",
+            "foot.r", "toes.r",
+        };
+
         /// <summary>Animação do esqueleto grande (Rig_Large_*), que tem um conjunto menor que o Rig_Medium.</summary>
         private static AnimationClip LargeClip(string file, string name)
         {
@@ -474,8 +519,8 @@ namespace Game.Client.Editor
 
         /// <summary>
         /// Animator do esqueleto grande (Guardião), com os mesmos parâmetros do <see cref="BuildController"/>. O Rig_Large
-        /// não tem magia, arco, a maioria dos gestos nem sentar: cada estilo de golpe usa um golpe corpo a corpo, só as
-        /// skills com <see cref="SkillMove.LargeSteps"/> ganham estado e, sem o parâmetro Resting, ele fica de pé na fogueira.
+        /// não tem magia nem arco: cada estilo de golpe usa um golpe corpo a corpo e só as skills com
+        /// <see cref="SkillMove.LargeSteps"/> ganham estado. Sentar e os gestos que faltam vêm do Rig_Medium, adaptados.
         /// </summary>
         private static AnimatorController BuildLargeController(string name)
         {
@@ -579,6 +624,14 @@ namespace Game.Client.Editor
 
             AddGesture(controller, machine, locomotion, "Idle2", LargeClip("General", "Idle_B"));
             AddGesture(controller, machine, locomotion, "Cheering", LargeClip("Simulation", "Flexing"));
+            // O Rig_Large não tem estes: vêm do Rig_Medium, adaptados (RetargetToLarge).
+            AddGesture(controller, machine, locomotion, "Talk", RetargetToLarge("General", "Interact"));
+            AddGesture(controller, machine, locomotion, "PickUp", RetargetToLarge("General", "PickUp"), onlyStationary: false);
+            AddGesture(controller, machine, locomotion, "UseItem", RetargetToLarge("General", "Use_Item"), onlyStationary: false);
+            AddGesture(controller, machine, locomotion, "ThrowItem", RetargetToLarge("General", "Throw"), onlyStationary: false);
+            AddGesture(controller, machine, locomotion, "Waving", RetargetToLarge("Simulation", "Waving"));
+            AddSitting(controller, machine, locomotion, RetargetToLarge("Simulation", "Sit_Floor_Down"),
+                RetargetToLarge("Simulation", "Sit_Floor_Idle", loop: true), RetargetToLarge("Simulation", "Sit_Floor_StandUp"));
 
             var dodge = machine.AddState("Esquiva");
             dodge.motion = LargeClip("MovementAdvanced", "Dodge_Forward");
@@ -600,6 +653,57 @@ namespace Game.Client.Editor
 
             EditorUtility.SetDirty(controller);
             return controller;
+        }
+
+        /// <summary>Sentar na fogueira com a sequência completa: sentar, descansar sentado e levantar.</summary>
+        private static void AddSitting(AnimatorController controller, AnimatorStateMachine machine, AnimatorState locomotion,
+            AnimationClip down, AnimationClip idle, AnimationClip up)
+        {
+            controller.AddParameter("Resting", AnimatorControllerParameterType.Bool);
+            var sitDown = machine.AddState("Sentando");
+            sitDown.motion = down;
+            var rest = machine.AddState("Sentado");
+            rest.motion = idle;
+            var standUp = machine.AddState("Levantando");
+            standUp.motion = up;
+
+            var toSit = locomotion.AddTransition(sitDown);
+            toSit.AddCondition(AnimatorConditionMode.If, 0, "Resting");
+            toSit.AddCondition(AnimatorConditionMode.IfNot, 0, "Dead");
+            Quick(toSit, 0.15f);
+
+            var finishSit = sitDown.AddTransition(rest);
+            finishSit.AddCondition(AnimatorConditionMode.If, 0, "Resting");
+            finishSit.hasExitTime = true;
+            finishSit.exitTime = 0.9f;
+            finishSit.duration = 0.12f;
+            finishSit.hasFixedDuration = true;
+
+            // Se o jogador andar ou cancelar enquanto senta, completa o movimento levantando.
+            var cancelSit = sitDown.AddTransition(standUp);
+            cancelSit.AddCondition(AnimatorConditionMode.IfNot, 0, "Resting");
+            cancelSit.hasExitTime = true;
+            cancelSit.exitTime = 0.9f;
+            cancelSit.duration = 0.08f;
+            cancelSit.hasFixedDuration = true;
+
+            var leaveSeat = rest.AddTransition(standUp);
+            leaveSeat.AddCondition(AnimatorConditionMode.IfNot, 0, "Resting");
+            Quick(leaveSeat, 0.12f);
+
+            var finishStand = standUp.AddTransition(locomotion);
+            finishStand.AddCondition(AnimatorConditionMode.IfNot, 0, "Resting");
+            finishStand.hasExitTime = true;
+            finishStand.exitTime = 0.9f;
+            finishStand.duration = 0.12f;
+            finishStand.hasFixedDuration = true;
+
+            var sitAgain = standUp.AddTransition(sitDown);
+            sitAgain.AddCondition(AnimatorConditionMode.If, 0, "Resting");
+            sitAgain.hasExitTime = true;
+            sitAgain.exitTime = 0.9f;
+            sitAgain.duration = 0.12f;
+            sitAgain.hasFixedDuration = true;
         }
 
         private static void AddHitVariant(AnimatorStateMachine machine, AnimatorState locomotion, string clipName, int variant)
@@ -684,7 +788,7 @@ namespace Game.Client.Editor
                 if (part != null) part.gameObject.SetActive(false);
             }
 
-            Attach(model, "handslot.r", look.RightHand);
+            Attach(model, "handslot.r", look.RightHand, look.RightHandEuler);
             Attach(model, "handslot.l", look.LeftHand);
             foreach (var renderer in model.GetComponentsInChildren<Renderer>(true))
             {
@@ -765,7 +869,7 @@ namespace Game.Client.Editor
             Object.DestroyImmediate(temp);
         }
 
-        private static void Attach(GameObject model, string slot, string weapon)
+        private static void Attach(GameObject model, string slot, string weapon, Vector3 euler = default)
         {
             if (string.IsNullOrEmpty(weapon)) return;
             var hand = model.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == slot);
@@ -774,7 +878,7 @@ namespace Game.Client.Editor
             var item = (GameObject)PrefabUtility.InstantiatePrefab(asset, hand);
             item.name = weapon;
             item.transform.localPosition = Vector3.zero;
-            item.transform.localRotation = Quaternion.identity;
+            item.transform.localRotation = Quaternion.Euler(euler);
             item.transform.localScale = Vector3.one;
         }
 

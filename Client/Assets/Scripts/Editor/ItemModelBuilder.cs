@@ -43,9 +43,9 @@ namespace Game.Client.Editor
             WeaponPrefab("arco_ferro", "bow_withString", "ranger", 0, 1f);
             WeaponPrefab("arco_aco_negro", "bow_withString", "ranger", 1, 1.05f);
             WeaponPrefab("arco_astralita", "bow_withString", "ranger", 2, 1.1f);
-            WeaponPrefab("machado_ferro", "axe_1handed_Large", "barbarian", 0, 1f);
-            WeaponPrefab("machado_aco_negro", "axe_1handed_Large", "barbarian", 1, 1.05f);
-            WeaponPrefab("machado_astralita", "axe_1handed_Large", "barbarian", 2, 1.1f);
+            WeaponPrefab("machado_ferro", "axe_1handed_Large", "barbarian", 0, 1f, KayKitBuilder.GuardianAxeEuler);
+            WeaponPrefab("machado_aco_negro", "axe_1handed_Large", "barbarian", 1, 1.05f, KayKitBuilder.GuardianAxeEuler);
+            WeaponPrefab("machado_astralita", "axe_1handed_Large", "barbarian", 2, 1.1f, KayKitBuilder.GuardianAxeEuler);
             ArrowPrefab();
             Gear();
             Small();
@@ -80,13 +80,14 @@ namespace Game.Client.Editor
             return material;
         }
 
-        private static void WeaponPrefab(string itemId, string model, string atlas, int grade, float scale)
+        private static void WeaponPrefab(string itemId, string model, string atlas, int grade, float scale, Vector3 euler = default)
         {
             var asset = AssetDatabase.LoadAssetAtPath<GameObject>($"{Weapons}/{model}.fbx");
             var material = Tinted(atlas, grade);
             var root = new GameObject(itemId);
             var weapon = (GameObject)PrefabUtility.InstantiatePrefab(asset, root.transform);
             weapon.transform.localScale = Vector3.one * scale;
+            weapon.transform.localRotation = Quaternion.Euler(euler); // na mão; no chão o giro abaixo substitui
             foreach (var renderer in weapon.GetComponentsInChildren<Renderer>(true))
                 renderer.sharedMaterials = renderer.sharedMaterials.Select(_ => material).ToArray();
             Save(root, $"{WeaponPrefabs}/{itemId}.prefab", keep: true);
