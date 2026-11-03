@@ -328,3 +328,17 @@ Cada decisão importante fica registrada aqui com data e motivo, para não ser r
 - **Limitação:** se o jogo fechar bem na hora em que o servidor troca o token, o jogador digita a senha uma vez.
 - **Teste do exe:** `-remembertest pasta` em duas fases (`-rememberphase 1` e `2`), com `-savedlogin pasta\dados` para
   não mexer no login de quem joga. A fase 2 abre o jogo sem digitar nada e tem que chegar à seleção.
+
+## 2026-11-03 — Esquiva no nível 5, recarga das poções na barra e MP automático na bolsa
+
+- **Esquiva como skill:** o Espaço continua sendo a esquiva, mas ela só libera no nível 5
+  (`PlayerRules.DodgeUnlockLevel`). O servidor ignora o pedido de esquiva antes disso. No HUD, ela ganhou uma casa
+  própria à esquerda da barra de atalhos, com ícone, a tecla, a recarga e o cadeado "Nv 5". Antes do nível 5, apertar
+  Espaço só mostra o aviso, e o tutorial pula o passo da esquiva.
+- **Recarga das poções:** a ficha do personagem (`CharacterSheet`) passou a levar a hora em que a poção de HP e a de MP
+  podem ser usadas de novo (`PotionReadyAt` e `ManaPotionReadyAt`). A poção na barra mostra a mesma sombra de recarga
+  das skills. Isso mudou uma mensagem, então o protocolo subiu para **23**.
+- **MP automático:** beber uma poção (inclusive a de MP que o servidor bebe sozinho quando falta mana) agora marca a
+  bolsa como alterada. Antes, o inventário aberto só mostrava a quantidade nova na próxima mudança da bolsa.
+- **Teste `-onlineui`:** os troncos da fogueira e os moradores têm colisão, e a caminhada do teste às vezes ficava presa
+  neles. Quando o personagem não sai do lugar, o teste anda de lado um pouco e tenta de novo.
