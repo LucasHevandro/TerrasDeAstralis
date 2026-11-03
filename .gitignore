@@ -64,4 +64,4 @@ deploy/.env
 deploy/rclone/
 Client/servidor.txt
 
-Claude.md 
+CLAUDE.md
