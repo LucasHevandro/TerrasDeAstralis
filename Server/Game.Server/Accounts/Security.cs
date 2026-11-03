@@ -79,7 +79,7 @@ public sealed class SessionTokens
     public string Create(int accountId)
     {
         PurgeExpired();
-        var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+        var token = NewRandom();
         _tokens[token] = (accountId, _now() + Lifetime);
         return token;
     }
@@ -98,6 +98,19 @@ public sealed class SessionTokens
 
     public void Revoke(string token) => _tokens.TryRemove(token, out _);
 
+    /// <summary>Derruba todas as sessões da conta (senha trocada ou banimento).</summary>
+    public void RevokeAccount(int accountId)
+    {
+        foreach (var (token, entry) in _tokens)
+        {
+            if (entry.AccountId == accountId) _tokens.TryRemove(token, out _);
+        }
+    }
+
+    /// <summary>Token aleatório de 256 bits em base64 para URL (sessão e "Manter conectado").</summary>
+    internal static string NewRandom() =>
+        Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
     private void PurgeExpired()
     {
         var now = _now();
@@ -106,4 +119,24 @@ public sealed class SessionTokens
             if (now >= entry.ExpiresAt) _tokens.TryRemove(token, out _);
         }
     }
+}
+
+/// <summary>
+/// "Manter conectado": token de longa duração guardado no computador do jogador. O banco só guarda o SHA-256 (o
+/// token é aleatório de 256 bits, então não precisa do hash lento da senha): quem lê o banco não consegue entrar.
+/// </summary>
+public static class DeviceTokens
+{
+    public static readonly TimeSpan Lifetime = TimeSpan.FromDays(30);
+
+    /// <summary>Computadores conectados ao mesmo tempo por conta; o sexto derruba o mais antigo.</summary>
+    public const int MaxPerAccount = 5;
+
+    /// <summary>Tokens maiores que isso nem são conferidos (os nossos têm 43 caracteres).</summary>
+    public const int MaxLength = 128;
+
+    public static string New() => SessionTokens.NewRandom();
+
+    public static string Hash(string token) =>
+        Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(token ?? ""))).ToLowerInvariant();
 }

@@ -19,6 +19,16 @@ public sealed class AccountEntity
     public List<CharacterEntity> Characters { get; set; } = new();
 }
 
+/// <summary>Token de "Manter conectado" de um computador (só o SHA-256 do token).</summary>
+public sealed class DeviceTokenEntity
+{
+    public long Id { get; set; }
+    public int AccountId { get; set; }
+    public string TokenHash { get; set; } = "";
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset ExpiresAt { get; set; }
+}
+
 /// <summary>Evento das métricas do teste fechado (sessões e relatórios do cliente).</summary>
 public sealed class MetricEventEntity
 {
@@ -197,9 +207,20 @@ public sealed class GameDbContext : DbContext
     public DbSet<GmActionEntity> GmActions => Set<GmActionEntity>();
     public DbSet<MetricEventEntity> MetricEvents => Set<MetricEventEntity>();
     public DbSet<MarketListingEntity> MarketListings => Set<MarketListingEntity>();
+    public DbSet<DeviceTokenEntity> DeviceTokens => Set<DeviceTokenEntity>();
 
     protected override void OnModelCreating(ModelBuilder model)
     {
+        model.Entity<DeviceTokenEntity>(e =>
+        {
+            e.ToTable("device_tokens");
+            e.Property(t => t.TokenHash).HasMaxLength(64).IsRequired();
+            e.HasIndex(t => t.TokenHash).IsUnique();
+            e.HasIndex(t => t.AccountId);
+            // Conta apagada (LGPD): os tokens vão junto.
+            e.HasOne<AccountEntity>().WithMany().HasForeignKey(t => t.AccountId).OnDelete(DeleteBehavior.Cascade);
+        });
+
         model.Entity<AccountEntity>(e =>
         {
             e.ToTable("accounts");

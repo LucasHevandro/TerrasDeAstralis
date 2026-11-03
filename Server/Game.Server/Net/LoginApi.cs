@@ -16,7 +16,9 @@ namespace Game.Server.Net;
 /// API HTTP de contas, no mesmo processo do jogo:
 /// <code>
 /// POST /api/register      { Account, Password }        → 200 | 400 | 409
-/// POST /api/login         { Account, Password }        → { Token, ExpiresInSeconds } | 401 | 429
+/// POST /api/login         { Account, Password, Remember } → { Token, ExpiresInSeconds, DeviceToken } | 401 | 429
+/// POST /api/login/device  { DeviceToken }              → igual ao login (com um DeviceToken novo) | 401 | 403
+/// POST /api/logout        { DeviceToken }              → 200 (esquece o token do computador e a sessão do Bearer)
 /// GET  /api/characters    Authorization: Bearer token  → { Characters: [...] }
 /// POST /api/characters    { Name, ClassId }            → { Id, Name, ClassId, Level } | 400 | 409
 /// </code>
@@ -53,6 +55,22 @@ public sealed class LoginApi : IAsyncDisposable
             if (body == null) return Error(new LocalText("auth.bad_request"), 400);
             var result = await auth.LoginAsync(body, ClientIp(request));
             return result.Ok ? Ok(result.Value!) : Error(result.Error, result.StatusCode);
+        });
+
+        _app.MapPost("/api/login/device", async (HttpRequest request) =>
+        {
+            var body = await ReadAsync<DeviceLogin>(request);
+            if (body == null) return Error(new LocalText("auth.bad_request"), 400);
+            var result = await auth.LoginWithDeviceAsync(body, ClientIp(request));
+            return result.Ok ? Ok(result.Value!) : Error(result.Error, result.StatusCode);
+        });
+
+        _app.MapPost("/api/logout", async (HttpRequest request) =>
+        {
+            var body = await ReadAsync<DeviceLogin>(request);
+            if (body == null) return Error(new LocalText("auth.bad_request"), 400);
+            await auth.LogoutAsync(body, BearerToken(request));
+            return Ok(new ApiError());
         });
 
         _app.MapGet("/api/characters", async (HttpRequest request) =>

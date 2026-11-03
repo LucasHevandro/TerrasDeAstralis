@@ -123,7 +123,15 @@ public sealed class AuthService
         var error = AccountRules.ValidatePassword(newPassword);
         if (error != null) return error;
         var hash = await HashAsync(() => _hasher.Hash(newPassword));
-        return await _store.SetPasswordHashAsync(AccountRules.NormalizeAccount(account), hash) ? null : new LocalText("auth.no_account");
+        var name = AccountRules.NormalizeAccount(account);
+        if (!await _store.SetPasswordHashAsync(name, hash)) return new LocalText("auth.no_account");
+        // Senha nova: os computadores que estavam conectados precisam dela de novo.
+        if (await _store.FindAccountAsync(name) is { } record)
+        {
+            await _store.RemoveDeviceTokensAsync(record.Id);
+            _tokens.RevokeAccount(record.Id);
+        }
+        return null;
     }
 
     /// <summary>Quantas contas o IP criou na janela (e esquece as mais velhas).</summary>
@@ -173,10 +181,62 @@ public sealed class AuthService
         }
         var rehash = _hasher.NeedsRehash(account!.PasswordHash) ? await HashAsync(() => _hasher.Hash(credentials.Password!)) : null;
         await _store.UpdateLoginAsync(account.Id, rehash);
-        return AuthResult<LoginResponse>.Success(new LoginResponse
+        return AuthResult<LoginResponse>.Success(await SessionAsync(account.Id, credentials.Remember, now));
+    }
+
+    private static readonly LocalText DeviceExpired = new("auth.device_expired");
+
+    /// <summary>
+    /// "Manter conectado": entra com o token do computador, sem senha. O token usado é apagado e a resposta traz um
+    /// novo (quem copiou o arquivo de outro computador só consegue entrar uma vez, e o dono percebe ao cair no login).
+    /// Confere o banimento e os termos como o login com senha; no pedido de termos novos o token continua valendo.
+    /// </summary>
+    public async Task<AuthResult<LoginResponse>> LoginWithDeviceAsync(DeviceLogin request, string? clientIp = null)
+    {
+        var token = request.DeviceToken ?? "";
+        if (token.Length == 0 || token.Length > DeviceTokens.MaxLength) return AuthResult<LoginResponse>.Fail(DeviceExpired, 401);
+        var now = _now();
+        if (!AllowRequest(clientIp, now)) return AuthResult<LoginResponse>.Fail(new LocalText("auth.try_again"), 429);
+
+        var hash = DeviceTokens.Hash(token);
+        if (await _store.FindDeviceTokenAsync(hash, now) is not { } accountId) return AuthResult<LoginResponse>.Fail(DeviceExpired, 401);
+        var account = await _store.FindAccountByIdAsync(accountId);
+        if (account == null) return AuthResult<LoginResponse>.Fail(DeviceExpired, 401);
+        if (account.IsBanned(now))
         {
-            Token = _tokens.Create(account.Id), ExpiresInSeconds = (int)_tokens.Lifetime.TotalSeconds,
-        });
+            await _store.RemoveDeviceTokensAsync(account.Id);
+            return AuthResult<LoginResponse>.Fail(Banned(account), 403);
+        }
+        if (_termsVersion != null && account.TermsVersion != _termsVersion)
+        {
+            if (request.AcceptTerms != _termsVersion) return AuthResult<LoginResponse>.Fail(new LocalText("auth.terms_updated", _termsVersion), 403);
+            await _store.AcceptTermsAsync(account.Id, _termsVersion);
+        }
+        // Dois pedidos com o mesmo token ao mesmo tempo: só o primeiro que apagar entra.
+        if (!await _store.RemoveDeviceTokenAsync(hash)) return AuthResult<LoginResponse>.Fail(DeviceExpired, 401);
+        await _store.UpdateLoginAsync(account.Id, null);
+        return AuthResult<LoginResponse>.Success(await SessionAsync(account.Id, remember: true, now));
+    }
+
+    /// <summary>"Sair da conta": esquece o token deste computador e encerra a sessão (os dois são opcionais).</summary>
+    public async Task LogoutAsync(DeviceLogin request, string? sessionToken)
+    {
+        var token = request.DeviceToken ?? "";
+        if (token.Length > 0 && token.Length <= DeviceTokens.MaxLength) await _store.RemoveDeviceTokenAsync(DeviceTokens.Hash(token));
+        if (!string.IsNullOrEmpty(sessionToken)) _tokens.Revoke(sessionToken);
+    }
+
+    /// <summary>Token de sessão e, com <paramref name="remember"/>, um token novo de "Manter conectado".</summary>
+    private async Task<LoginResponse> SessionAsync(int accountId, bool remember, DateTimeOffset now)
+    {
+        var response = new LoginResponse { Token = _tokens.Create(accountId), ExpiresInSeconds = (int)_tokens.Lifetime.TotalSeconds };
+        if (remember)
+        {
+            response.DeviceToken = DeviceTokens.New();
+            response.DeviceExpiresInSeconds = (int)DeviceTokens.Lifetime.TotalSeconds;
+            await _store.AddDeviceTokenAsync(accountId, DeviceTokens.Hash(response.DeviceToken), now, now + DeviceTokens.Lifetime, DeviceTokens.MaxPerAccount);
+        }
+        return response;
     }
 
     public async Task<AuthResult<CharacterList>> ListCharactersAsync(string? token)

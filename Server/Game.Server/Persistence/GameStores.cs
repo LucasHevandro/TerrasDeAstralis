@@ -58,6 +58,38 @@ public sealed class EfGameStore : IGameStore
         account.BannedUntil = until;
         account.BanReason = until == null ? "" : reason;
         await db.SaveChangesAsync();
+        if (until != null) await db.DeviceTokens.Where(t => t.AccountId == accountId).ExecuteDeleteAsync();
+    }
+
+    public async Task AddDeviceTokenAsync(int accountId, string tokenHash, DateTimeOffset createdAt, DateTimeOffset expiresAt, int maxPerAccount)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        await db.DeviceTokens.Where(t => t.AccountId == accountId && t.ExpiresAt <= createdAt).ExecuteDeleteAsync();
+        var keep = Math.Max(0, maxPerAccount - 1);
+        var oldest = await db.DeviceTokens.Where(t => t.AccountId == accountId).OrderByDescending(t => t.CreatedAt).ThenByDescending(t => t.Id)
+            .Skip(keep).Select(t => t.Id).ToListAsync();
+        if (oldest.Count > 0) await db.DeviceTokens.Where(t => oldest.Contains(t.Id)).ExecuteDeleteAsync();
+        db.DeviceTokens.Add(new DeviceTokenEntity { AccountId = accountId, TokenHash = tokenHash, CreatedAt = createdAt, ExpiresAt = expiresAt });
+        await db.SaveChangesAsync();
+    }
+
+    public async Task<int?> FindDeviceTokenAsync(string tokenHash, DateTimeOffset now)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        var token = await db.DeviceTokens.AsNoTracking().FirstOrDefaultAsync(t => t.TokenHash == tokenHash);
+        return token == null || now >= token.ExpiresAt ? null : token.AccountId;
+    }
+
+    public async Task<bool> RemoveDeviceTokenAsync(string tokenHash)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        return await db.DeviceTokens.Where(t => t.TokenHash == tokenHash).ExecuteDeleteAsync() > 0;
+    }
+
+    public async Task RemoveDeviceTokensAsync(int accountId)
+    {
+        await using var db = await _factory.CreateDbContextAsync();
+        await db.DeviceTokens.Where(t => t.AccountId == accountId).ExecuteDeleteAsync();
     }
 
     public async Task SetMuteAsync(int accountId, DateTimeOffset? until)
@@ -513,6 +545,42 @@ public sealed class InMemoryGameStore : IGameStore
         lock (_lock)
             if (_accounts.TryGetValue(accountId, out var account))
                 _accounts[accountId] = account with { BannedUntil = until, BanReason = until == null ? "" : reason };
+        if (until != null) lock (_lock) _deviceTokens.RemoveAll(t => t.AccountId == accountId);
+        return Task.CompletedTask;
+    }
+
+    private readonly List<(int AccountId, string Hash, DateTimeOffset CreatedAt, DateTimeOffset ExpiresAt)> _deviceTokens = new();
+
+    public Task AddDeviceTokenAsync(int accountId, string tokenHash, DateTimeOffset createdAt, DateTimeOffset expiresAt, int maxPerAccount)
+    {
+        lock (_lock)
+        {
+            _deviceTokens.RemoveAll(t => t.AccountId == accountId && t.ExpiresAt <= createdAt);
+            // A lista fica em ordem de criação: os primeiros da conta são os mais antigos.
+            while (_deviceTokens.Count(t => t.AccountId == accountId) >= Math.Max(1, maxPerAccount))
+                _deviceTokens.RemoveAt(_deviceTokens.FindIndex(t => t.AccountId == accountId));
+            _deviceTokens.Add((accountId, tokenHash, createdAt, expiresAt));
+        }
+        return Task.CompletedTask;
+    }
+
+    public Task<int?> FindDeviceTokenAsync(string tokenHash, DateTimeOffset now)
+    {
+        lock (_lock)
+        {
+            var index = _deviceTokens.FindIndex(t => t.Hash == tokenHash);
+            return Task.FromResult(index < 0 || now >= _deviceTokens[index].ExpiresAt ? (int?)null : _deviceTokens[index].AccountId);
+        }
+    }
+
+    public Task<bool> RemoveDeviceTokenAsync(string tokenHash)
+    {
+        lock (_lock) return Task.FromResult(_deviceTokens.RemoveAll(t => t.Hash == tokenHash) > 0);
+    }
+
+    public Task RemoveDeviceTokensAsync(int accountId)
+    {
+        lock (_lock) _deviceTokens.RemoveAll(t => t.AccountId == accountId);
         return Task.CompletedTask;
     }
 
@@ -589,6 +657,7 @@ public sealed class InMemoryGameStore : IGameStore
             foreach (var listing in _market.Values.Where(m => characters.Contains(m.SellerCharacterId)).ToList()) _market.Remove(listing.Id);
             _log.RemoveAll(l => characters.Contains(l.CharacterId));
             _metrics.RemoveAll(m => m.AccountId == account.Id);
+            _deviceTokens.RemoveAll(t => t.AccountId == account.Id);
             _accounts.Remove(account.Id);
             _accountCreated.Remove(account.Id);
             return Task.FromResult(true);

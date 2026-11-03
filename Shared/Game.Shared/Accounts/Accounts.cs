@@ -177,6 +177,9 @@ namespace Game.Shared.Accounts
         /// criar conta; no login, só quando a versão mudou desde o último aceite.
         /// </summary>
         public string AcceptTerms = "";
+
+        /// <summary>"Manter conectado": o login devolve também um <see cref="LoginResponse.DeviceToken"/>.</summary>
+        public bool Remember;
     }
 
     [Serializable]
@@ -184,6 +187,24 @@ namespace Game.Shared.Accounts
     {
         public string Token = "";
         public int ExpiresInSeconds;
+
+        /// <summary>
+        /// Token deste computador ("Manter conectado"), vazio se não foi pedido. Entra sem senha uma única vez: cada
+        /// uso devolve um novo, que o cliente guarda no lugar do antigo.
+        /// </summary>
+        public string DeviceToken = "";
+
+        public int DeviceExpiresInSeconds;
+    }
+
+    /// <summary>Entrar com o token do computador (<c>/api/login/device</c>) ou esquecê-lo (<c>/api/logout</c>).</summary>
+    [Serializable]
+    public sealed class DeviceLogin
+    {
+        public string DeviceToken = "";
+
+        /// <summary>Como em <see cref="Credentials.AcceptTerms"/>: só quando o servidor pediu o aceite de termos novos.</summary>
+        public string AcceptTerms = "";
     }
 
     [Serializable]

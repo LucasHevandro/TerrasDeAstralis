@@ -305,3 +305,26 @@ Cada decisão importante fica registrada aqui com data e motivo, para não ser r
   fica de pé, e a criação de personagem esconde a escolha de penteado. O elmo dele é o chapéu de urso.
 - **Testes:** o servidor aceita `--guest-class guardian`.
 - **Protocolo:** nenhuma mensagem mudou (a classe vai como número), então continua o 22.
+
+## 2026-11-02 — Login salvo: "Lembrar conta" e "Manter conectado"
+
+- **Por quê:** jogadores reclamaram de digitar a conta e a senha toda vez.
+- **Lembrar conta** (já vem marcada): o nome da conta fica em `conta.json`, na pasta de dados do jogo, e o campo vem
+  preenchido. A senha nunca é guardada.
+- **Manter conectado:** o login devolve um token do computador (256 bits, vale 30 dias). Ao abrir o jogo, o menu entra
+  sozinho no servidor escolhido e vai direto à seleção de personagem. Se a sessão cair ao trocar de personagem (o
+  servidor reiniciou), ele usa o token também.
+- **No servidor:** a tabela `device_tokens` (migração `TokensDeDispositivo`) guarda só o SHA-256 do token. Cada uso
+  apaga o token e entrega outro, então um arquivo copiado entra uma vez só. São no máximo 5 computadores por conta (o
+  sexto derruba o mais antigo). A entrada confere o banimento e os termos novos, como o login com senha.
+- **Revogação:** `--set-password` apaga os tokens e as sessões da conta; banir apaga os tokens; "Sair da conta" apaga o
+  token daquele computador no servidor e no PC; apagar a conta leva tudo junto.
+- **No PC:** o token fica em `sessao.dat`, cifrado com a DPAPI do Windows (`CryptProtectData` do usuário atual, por
+  P/Invoke no `crypt32`). Copiado para outro PC ou outro usuário do Windows, o arquivo não abre. Fora do Windows, só a
+  conta é lembrada. Se o servidor não responde, o token continua guardado; se ele recusa, o token é esquecido e fica a
+  tela de entrada com a conta preenchida.
+- **API:** `POST /api/login` aceita `Remember`; `POST /api/login/device` e `POST /api/logout` são novas. Nenhuma
+  mensagem do jogo mudou, então o protocolo continua o 22.
+- **Limitação:** se o jogo fechar bem na hora em que o servidor troca o token, o jogador digita a senha uma vez.
+- **Teste do exe:** `-remembertest pasta` em duas fases (`-rememberphase 1` e `2`), com `-savedlogin pasta\dados` para
+  não mexer no login de quem joga. A fase 2 abre o jogo sem digitar nada e tem que chegar à seleção.
