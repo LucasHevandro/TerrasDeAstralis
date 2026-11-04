@@ -1,4 +1,4 @@
-# Publica uma versão nova do cliente na VPS: os launchers dos jogadores baixam só o que mudou na próxima vez que abrirem.
+﻿# Publica uma versão nova do cliente na VPS: os launchers dos jogadores baixam só o que mudou na próxima vez que abrirem.
 # Uso (gere o build do Windows antes, menu Protótipo > Gerar build Windows):
 #   powershell -ExecutionPolicy Bypass -File Tools/launcher/publicar.ps1 -Novidades "Monstros elite nos campos."
 # Opções: -Servidor astralis (o Host do ~/.ssh/config), -Versao 0.2.0, -Limpar (apaga da VPS os arquivos que nenhuma
@@ -30,13 +30,20 @@ if (-not $Versao) {
 }
 $out = Join-Path $root 'Client\Builds\Publicar'
 Remove-Item (Join-Path $out 'versao.json') -ErrorAction SilentlyContinue
+# Histórico (a linha do tempo do launcher): a versão no ar vira a primeira das anteriores.
+$remote = '~/TerrasDeAstralis/deploy/download'
+$anterior = Join-Path $out 'versao-anterior.json'
+Remove-Item $anterior -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Force $out | Out-Null
+try { scp -q "${Servidor}:$remote/versao.json" $anterior 2>$null } catch { }
+if (-not (Test-Path $anterior)) { Write-Host 'Sem versão no ar: o histórico começa por esta.' }
+$inicial = Join-Path $PSScriptRoot 'historico-inicial.json'
 # O "| Out-Null" faz o PowerShell esperar o exe (ele é de janela, não de console).
-& $launcher --publicar $build $out $Versao $Novidades | Out-Null
+& $launcher --publicar $build $out $Versao $Novidades --anterior $anterior --historico-inicial $inicial | Out-Null
 if (-not (Test-Path (Join-Path $out 'versao.json'))) { throw 'O launcher não montou a versão.' }
 Write-Host (Get-Content (Join-Path $out 'resumo.txt'))
 
 # 3. Envia só os arquivos que a VPS ainda não tem; o versao.json vai por último (troca de uma vez).
-$remote = '~/TerrasDeAstralis/deploy/download'
 $existing = @(ssh $Servidor "mkdir -p $remote/arquivos && ls $remote/arquivos")
 if ($LASTEXITCODE -ne 0) { throw "Não consegui entrar na VPS ($Servidor)." }
 $release = Get-Content (Join-Path $out 'versao.json') -Raw | ConvertFrom-Json

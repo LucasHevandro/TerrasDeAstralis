@@ -26,7 +26,7 @@ namespace Game.Launcher
         private readonly Updater _updater;
         private readonly string[] _args;
         private readonly Image? _crest;
-        private readonly TextBox _notes;
+        private readonly Timeline _notes;
         private readonly Label _status;
         private readonly Label _server;
         private readonly Label _version;
@@ -59,12 +59,11 @@ namespace Game.Launcher
                 Text = "Novidades", ForeColor = Gold, BackColor = Color.Transparent, AutoSize = true,
                 Font = new Font("Georgia", 11f, FontStyle.Bold), Location = new Point(28, 150),
             });
-            _notes = new TextBox
+            _notes = new Timeline(Gold, TextColor, Muted)
             {
-                Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, BorderStyle = BorderStyle.None,
-                BackColor = Color.FromArgb(18, 28, 54), ForeColor = TextColor, Location = new Point(28, 178), Size = new Size(704, 150),
-                Text = "Procurando a versão mais nova...", TabStop = false,
+                BackColor = Color.FromArgb(18, 28, 54), Location = new Point(28, 178), Size = new Size(704, 150),
             };
+            _notes.ShowMessage("Procurando a versão mais nova...");
             Controls.Add(_notes);
 
             _server = new Label { ForeColor = Muted, BackColor = Color.Transparent, AutoSize = true, Location = new Point(560, 152), Text = "" };
@@ -118,7 +117,7 @@ namespace Game.Launcher
             {
                 var release = await _updater.FetchAsync();
                 _release = release;
-                _notes.Text = string.IsNullOrWhiteSpace(release.Notes) ? "Sem novidades nesta versão." : release.Notes.Replace("\n", Environment.NewLine);
+                _notes.Show(release.Timeline());
                 _version.Text = "Versão " + release.Version;
                 var missing = await Task.Run(() => _updater.Missing(release, progress));
                 if (missing.Count > 0)
@@ -150,8 +149,8 @@ namespace Game.Launcher
                 if (_release == null && File.Exists(game))
                 {
                     _release = installed ?? new Release();
-                    _notes.Text = "Não deu para procurar atualização agora (sem internet ou o servidor está fora do ar)." +
-                                  Environment.NewLine + "Dá para abrir a versão instalada.";
+                    _notes.ShowMessage("Não deu para procurar atualização agora (sem internet ou o servidor está fora do ar)." +
+                                       Environment.NewLine + "Dá para abrir a versão instalada.");
                     if (installed != null) _version.Text = "Versão " + installed.Version;
                     _done = _total = 1;
                     SetReady(true, "Sem conexão com a atualização.");

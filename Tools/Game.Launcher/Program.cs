@@ -12,7 +12,8 @@ namespace Game.Launcher
     /// <item><c>--pasta DIR</c> e <c>--url URL</c>: outra pasta do jogo ou outro endereço de atualização (testes).</item>
     /// <item><c>--verificar</c>: atualiza sem janela, escreve o <c>launcher.log</c> e fecha (0 = ok).</item>
     /// <item><c>--foto ARQUIVO</c>: abre a janela, espera ficar pronta, salva a imagem e fecha (testes).</item>
-    /// <item><c>--publicar PASTA_DO_BUILD SAIDA VERSAO [NOVIDADES]</c>: monta a versão (Tools/launcher/publicar.ps1).</item>
+    /// <item><c>--publicar PASTA_DO_BUILD SAIDA VERSAO [NOVIDADES]</c>: monta a versão (Tools/launcher/publicar.ps1).
+    /// Com <c>--anterior ARQUIVO</c> (o versao.json no ar) e <c>--historico-inicial ARQUIVO</c>, monta o histórico.</item>
     /// </list>
     /// </summary>
     public static class Program
@@ -23,9 +24,10 @@ namespace Game.Launcher
             var publish = Array.IndexOf(args, "--publicar");
             if (publish >= 0)
             {
-                var rest = args.Skip(publish + 1).ToArray();
+                var rest = args.Skip(publish + 1).TakeWhile(a => !a.StartsWith("--")).ToArray();
                 if (rest.Length < 3) return Fail("Uso: --publicar PASTA_DO_BUILD SAIDA VERSAO [NOVIDADES]");
-                var release = Publisher.Build(rest[0], rest[1], rest[2], rest.Length > 3 ? rest[3] : "");
+                var release = Publisher.Build(rest[0], rest[1], rest[2], rest.Length > 3 ? rest[3] : "",
+                    Option(args, "--anterior"), Option(args, "--historico-inicial"));
                 File.WriteAllText(Path.Combine(rest[1], "resumo.txt"),
                     $"{release.Version}: {release.Files.Count} arquivos, {Updater.Megabytes(release.Files.Sum(f => f.Packed))} compactados\n");
                 return 0;
