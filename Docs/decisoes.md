@@ -307,7 +307,8 @@ Cada decisão importante fica registrada aqui com data e motivo, para não ser r
   cada osso recebe a rotação de repouso dele mais a diferença que o clipe aplica no Rig_Medium, e o quadril segue a
   proporção da altura. Os clipes ficam em `Gerado/Large_*.anim`.
 - **Machado:** a mão do Rig_Large tem outro eixo, e o machado grande ficava deitado ou de cabeça para baixo. O giro
-  certo é (0, 0, 270) (`KayKitBuilder.GuardianAxeEuler`), usado no prefab da classe e nos machados por grau.
+  escolhido é (0, 180, 0) (`KayKitBuilder.GuardianAxeEuler`): o cabo para a frente e a cabeça pendendo, com o fio para
+  baixo. Vale no prefab da classe e nos machados por grau.
 - **Testes:** o servidor aceita `--guest-class guardian`.
 - **Protocolo:** nenhuma mensagem mudou (a classe vai como número), então continua o 22.
 
