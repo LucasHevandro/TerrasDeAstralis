@@ -368,7 +368,8 @@ O jogador instala uma vez (pelo instalador). O atalho abre o **launcher** (`Terr
 - baixa o `https://DOMINIO/download/versao.json`;
 - confere cada arquivo do jogo pelo SHA-256 e baixa **só os que mudaram** (compactados), mostrando o progresso;
 - apaga o que saiu da versão e troca a si mesmo quando ele também mudou;
-- mostra as novidades da versão e se o servidor está no ar, e libera o botão **Jogar**;
+- mostra as novidades numa linha do tempo (a versão atual e as anteriores) e se o servidor está no ar, e libera o
+  botão **Jogar**;
 - sem internet, deixa abrir a versão instalada.
 
 **Publicar uma versão nova** (no PC, depois do build do Windows, com o `ssh astralis` configurado):
@@ -382,6 +383,9 @@ powershell -ExecutionPolicy Bypass -File Tools\launcher\publicar.ps1 -Novidades 
 - **Versão:** a do Player Settings (`bundleVersion`) mais a data, ou `-Versao 0.2.0`.
 - **Instalador:** refaz o `Client/Builds/InstalarTerrasDeAstralis.exe` com a mesma versão (`-SemInstalador` pula).
 - **Limpeza:** `-Limpar` apaga da VPS os arquivos que a versão nova não usa mais.
+- **Histórico:** o script baixa o `versao.json` que está no ar, e a versão nova sai com o campo `historico` (a anterior
+  e o histórico dela, até 30 versões). As versões de antes do histórico existir estão em
+  `Tools/launcher/historico-inicial.json`. Para corrigir um texto antigo, edite esse arquivo e publique de novo.
 - **Endereço:** o launcher usa `https://teradestralis.duckdns.org/download/`. Para outro, ponha
   `atualizacao = https://outro/download/` no `servidor.txt` (ele vai junto na versão).
 
