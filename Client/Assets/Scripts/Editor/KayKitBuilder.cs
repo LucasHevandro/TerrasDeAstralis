@@ -47,7 +47,7 @@ namespace Game.Client.Editor
         }
 
         /// <summary>Giro do machado na mão do Guardião (o mesmo nos machados por grau, no ItemModelBuilder).</summary>
-        internal static readonly Vector3 GuardianAxeEuler = new Vector3(0f, 0f, 270f);
+        internal static readonly Vector3 GuardianAxeEuler = new Vector3(0f, 180f, 0f);
 
         /// <summary>Aventureiros do pacote com o mesmo esqueleto: a cabeça de um serve no corpo do outro.</summary>
         private static readonly string[] HeadModels = { "Knight", "Mage", "Ranger", "Rogue", "Barbarian" };
